@@ -43,15 +43,15 @@ cp AIbot.conf.sample SampleBot.conf
 ### Supported models
 __AI IRC Bot__ can use any of the below models.
 * ChatGPT (OpenAI): https://platform.openai.com/docs/models
-** Chat Completion models
-  > __gpt-4o-mini__, gpt-4o, gpt-4, gpt-4-turbo, gpt-4-turbo-preview, gpt-3.5-turbo
-** Completion models
-  > gpt-3.5-turbo-instruct, babbage-002, davinci-002
-** Image creation models
-  > dall-e-2, dall-e-3
+  * Chat Completion models
+    > __gpt-4o-mini__, gpt-4o, gpt-4, gpt-4-turbo, gpt-4-turbo-preview, gpt-3.5-turbo
+  * Completion models
+    > gpt-3.5-turbo-instruct, babbage-002, davinci-002
+  * Image creation models
+    > dall-e-2, dall-e-3
 * Claude (Anthropic): https://docs.anthropic.com/en/docs/about-claude/models
-** Chat Completion models
-  > claude-3-5-sonnet-latest, __claude-3-5-haiku-latest__
+  * Chat Completion models
+    > claude-3-5-sonnet-latest, __claude-3-5-haiku-latest__
 
 We suggest starting experimenting with __gpt-4o-mini__ for the ChatGPT (OpenAI) or __claude-3-5-haiku-latest__ for Claude (Anthropic).
 
