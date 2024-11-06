@@ -1,0 +1,71 @@
+[AI]
+# model: defines model to be used
+#
+# ChatGPT (OpenAI)
+#  REF: https://platform.openai.com/docs/models
+#  ChatCompletion models: gpt-4o-mini, gpt-4o, gpt-4, gpt-4-turbo, gpt-4-turbo-preview, gpt-3.5-turbo
+#  Completion models: gpt-3.5-turbo-instruct, babbage-002, davinci-002
+#  Images models: dall-e-2, dall-e-3
+#
+# Claude (Anthropic)
+#  REF: https://docs.anthropic.com/en/docs/about-claude/models
+#  ChatCompletion models: claude-3-5-sonnet-latest, claude-3-5-haiku-latest
+#
+model = claude-3-5-haiku-latest
+
+# api_key: API Key
+#
+# ChatGPT (OpenAI)
+#  https://platform.openai.com/account/api-keys
+#
+# Claude (Anthropic)
+#  https://console.anthropic.com/settings/keys
+#
+api_key = sk-...
+
+# context: valid for ChatGPT/ChatCompletion models only
+context = You are a helpful and friendly assistant with IQ of 200.
+
+# history: valid for Claude/ChatCompletion and ChatGPT/ChatCompletion models only
+history = 10
+
+# temperature: valid for Claude/ChatCompletion, ChatGPT/ChatCompletion and ChatGPT/Completion models only
+temperature = 0.5
+
+# max_tokens: valid for Claude/ChatCompletion, ChatGPT/ChatCompletion and ChatGPT/Completion models only
+max_tokens = 1000
+
+# top_p: valid for Claude/ChatCompletion, ChatGPT/ChatCompletion and ChatGPT/Completion models only
+top_p = 1
+
+# frequency_penalty: valid for ChatGPT/ChatCompletion and ChatGPT/Completion models only
+frequency_penalty = 0
+
+# presence_penalty: valid for ChatGPT/ChatCompletion and ChatGPT/Completion models only
+presence_penalty = 0
+
+# request_timeout: valid for ChatGPT/ChatCompletion and ChatGPT/Completion models only
+request_timeout = 60
+
+
+[IRC]
+# servers: list of servers, separated with comma (,), each server defined as HOST:PORT:SSL:[PASSWORD]
+servers = tngnet.ircnet.io:6679:true:,irc.nlnog.net:6667:false:
+
+# channels: list of permanent channels, separated with comma (,)
+channels = #oiram
+
+# accept_invites: accept invitation to join non-permanent channel
+accept_invites = true
+
+# rejoin_invited: re-join non-permanent channel to which bot was invited
+rejoin_invited = false
+
+# nickname: 
+nickname = SampleBot
+
+# ident:
+ident = SampleBot
+
+# realname: real name
+realname = Sample Bot
