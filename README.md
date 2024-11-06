@@ -1,5 +1,5 @@
 # AI IRC Bot
-__AI IRC Bot__ is a simple IRC bot written in Python. It was initially forked from the [knrd1/chatgpt](https://github.com/knrd1/chatgpt) into [oiramNet/ChatGPT-IRC-Bot] https://github.com/oiramNet/ChatGPT-IRC-Bot but turned into its own project to support other __AI__ back-ends. It connects to the selected __AI__ endpoints to answer questions or generate images and uses official bindings from __AI__ to interact with it using the __API__ through the HTTP/HTTPS requests. You can find more details about supported __APIs__ below:
+__AI IRC Bot__ is a simple IRC bot written in Python. It was initially forked from the [knrd1/chatgpt](https://github.com/knrd1/chatgpt) into [oiramNet/ChatGPT-IRC-Bot](https://github.com/oiramNet/ChatGPT-IRC-Bot) but turned into its own project to support other __AI__ back-ends. It connects to the selected __AI__ endpoints to answer questions or generate images and uses official bindings from __AI__ to interact with it using the __API__ through the HTTP/HTTPS requests. You can find more details about supported __APIs__ below:
 
 * ChatGPT (OpenAI): https://platform.openai.com/docs/api-reference
 * Claude (Anthropic): https://docs.anthropic.com/en/api/getting-started
