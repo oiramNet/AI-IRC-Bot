@@ -13,6 +13,14 @@ import string
 import openai
 import anthropic
 
+print("")
+print("**************************************************")
+print("* AI IRC Bot by Mariusz J. Handke (oiram@IRCnet) *")
+print("*                                                *")
+print("* SRC: https://github.com/oiramNet/AI-IRC-Bot    *")
+print("**************************************************")
+print("")
+
 #
 # DEFINITIONS
 # 
@@ -43,7 +51,7 @@ def timeInUtc():
 	now_of_wday = dt.strftime("%A")
 	now_of_time = dt.strftime("%H:%M")
 	system_message_content = f"Today is {now_of_wday}, the year is {now_of_year}, the month is {now_of_month}, and the date is {now_of_day}. " \
-	f"The current time in UTC is {now_of_time}. "
+	f"The current time in UTC is {now_of_time}."
 	return system_message_content
 
 # DEF: String to boolean
@@ -85,8 +93,37 @@ def ircAuth(irc, password, ident, realname, nickname):
 	irc.send(bytes("USER " + ident + " 0 * :" + realname + "\n", "UTF-8"))
 	irc.send(bytes("NICK " + nickname + "\n", "UTF-8"))
 
-# DEF: Join channel
-def joinChannels(irc, channels):
+# DEF: Set nickAuthenticate with IRC server
+def ircSetNick(irc, nick, nickname):
+	"""
+		nick - correct nickname (from config)
+		nickname - random nickname (eg. generated during connection)
+	"""
+	irc.send(bytes("NICK " + nick + "\n", "UTF-8"))
+	ircmsg = getData(irc)
+	rcode = ircmsg.split()[1]
+	rnick = nickname
+	match rcode:
+		case "432":
+			"""
+				invalid nickname
+			"""
+			print("INFO: Invalid nickname (" + nick + "). Using random nickname (" + nickname + ")")
+		case "433":
+			"""
+				nickname in use
+			"""
+			print("INFO: My nickname (" + nick + ") is in use. Using random nickname (" + nickname + ")")
+		case _:
+			"""
+				unknown RCODE
+			"""
+			print("INFO: RCODE = ", rcode)
+			rnick = nick
+	return rnick
+
+# DEF: Join channels
+def ircJoinChannels(irc, channels):
 	irc.send(bytes("JOIN " + ",".join(channels) + "\n", "UTF-8"))
 #	ircmsg = ""
 #	while ircmsg.find("End of /NAMES list.") == -1:
@@ -94,50 +131,52 @@ def joinChannels(irc, channels):
 #		print("ircmsg = ", ircmsg)
 
 # DEF: Connect to IRC server
-def ircConnect(server, port, usessl, password, ident, realname, nickname, channels, wait):
+def ircConnect(server, port, usessl, password, ident, realname, wait):
+	"""
+		Connect to IRC server using RANDOM nick
+	"""
 	time.sleep(wait)
-	nick = nickname
+	#generate 9 characters random nick (AIbot####)
+	nickname = ("AIbot" + srand(4))[:9]
 	try:
-		print("INFO: Connecting to " + server + " as " + nickname + "\n")
+		print("INFO: Connecting to " + server)
 		irc = netConnect(server, port, usessl)
 		ircAuth(irc, password, ident, realname, nickname)
-		joinChannels(irc, channels)
 		ircmsg = getData(irc)
 		rcode = ircmsg.split()[1]
 		if rcode == "020":
 			"""
-			some IRC server send info message/motd/...
+				some IRC server send info message/motd/...
 			"""
 			ircmsg = getData(irc)
 			rcode = ircmsg.split()[1]
 		match rcode:
 			case "001":
 				"""
-				print("INFO: ### 001 ###")
+					ok
 				"""
 			case "433":
 				"""
-				nickname in use
+					nickname in use
+					maybe do something
 				"""
-				nickname = (nick + "_" + srand(3))[:9]
-				print("INFO: My nickname (" + nick + ") is in use. Using alternative nickname (" + nickname + ").\n")
-				irc.close()
-				irc = netConnect(server, port, usessl)
-				ircAuth(irc, password, ident, realname, nickname)
-				joinChannels(irc, channels)
-				ircmsg = getData(irc)	# check if needed
 			case _:
 				"""
-				unknown RCODE
+					unknown RCODE
 				"""
 				print("INFO: ", rcode)
 	except:
-		print("ERROR: Connection to " + server + " failed.\n")
-	ircmsg = getData(irc)
+		print("ERROR: Connection to " + server + " failed")
+	ircmsg = getData(irc)	#maybe not needed
+#	print("ircmsg3 = ", ircmsg, "\n")
+#	print("peer = ", irc.getpeername())
 	return irc, nickname
 
 # DEF: Connect to IRC server
 def isIrcConnected(irc, server, port, usessl, password, ident, realname, nickname, channels, wait):
+	"""
+		if connected, display details
+	"""
 	try:
 		irc.getpeername()
 		print("INFO: Connected to IRC")
@@ -145,7 +184,6 @@ def isIrcConnected(irc, server, port, usessl, password, ident, realname, nicknam
 		print("\tNICK: " + nickname)
 		print("\tCHANNELS: ", end="")
 		print(*channels, sep =', ')
-		print("")
 		return True
 	except socket.error:
 		print("INFO: Not connected to IRC")
@@ -168,6 +206,15 @@ def sendMessageToIrcChannel(irc, channel, reply_to, message):
 				irc.send(bytes("PRIVMSG " + channel + " :" + msg[:last_space_index] + "\n", "UTF-8"))
 				msg = msg[last_space_index:].lstrip()
 
+# DEF: create list of messages
+def prepMessages(history, previous_QA, question):
+	messages = []
+	if history > 0:
+		for q, a in previous_QA[-history:]:
+			messages.append({ "role": "user", "content": q })
+			messages.append({ "role": "assistant", "content": a })
+	messages.append({ "role": "user", "content": question })
+	return messages
 
 #
 # CONFIGURATION
@@ -180,7 +227,7 @@ if len(sys.argv)>1:
 	# Read configuration file
 	conf_file = sys.argv[1]
 	if os.path.isfile(conf_file):
-		print("INFO: Loading configuration file (" + conf_file + ").\n")
+		print("INFO: Loading configuration file (" + conf_file + ")")
 		config = configparser.ConfigParser()
 		config.read(conf_file)
 	else:
@@ -205,7 +252,7 @@ try:
 	else:
 		print("ERROR: Invalid model selected.\n")
 		exit(1)
-	ai_type = ai_type + " using model " + model + ""
+	ai_type = ai_type + " and model " + model
 	ai.api_key = api_key
 
 	# Set up AI parameters
@@ -222,14 +269,13 @@ try:
 	servers = "".join(config.get('IRC', 'servers').split()).split(',')
 	ident = config.get('IRC', 'ident')
 	realname = config.get('IRC', 'realname')
-	nickname = config.get('IRC', 'nickname')[:9]
-	nick = nickname[:9]
+	nick = config.get('IRC', 'nickname')[:9]
 	channels = "".join(config.get('IRC', 'channels').split()).split(',')
 	accept_invites = config.getboolean('IRC', 'accept_invites')
 	rejoin_invited = config.getboolean('IRC', 'rejoin_invited')
 
 except Exception as e:
-	print("ERROR: Missing or invalid configuration option(s). Check your configuration file.\n")
+	print("ERROR: Missing or invalid configuration option(s)")
 	print(""  + str(e) + "\n")
 	exit(1)
 
@@ -239,11 +285,12 @@ except Exception as e:
 # EXECUTION
 #
 
-print("INFO: This bot is based on " + ai_type + "\n")
+print("INFO: This bot is configured to use " + ai_type)
 server_id = 0
 server_id_max = len(servers)-1
 irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 previous_QA = []
+
 
 # Listen for messages from users and answer questions
 while True:
@@ -257,18 +304,27 @@ while True:
 #			print("UTF ERROR")
 			continue
 		except:
-			nickname = nick
+#			nickname = nick
 			if 'ircmsg' in globals():
-				print("ERROR: Connection to IRC lost (" + srv[0] + "). Reconnecting in " + str(reconnect) + " seconds...\n")
+				print("ERROR: Connection to IRC lost (" + srv[0] + "). Reconnecting in " + str(reconnect) + " seconds...")
 				server_id = nextServer(server_id, server_id_max)
 			else:
-				print("INFO: Starting...\n")
+				print("INFO: Starting...")
 			srv = servers[server_id].split(':')
-			irc, nickname = ircConnect(srv[0], srv[1], srv[2], srv[3], ident, realname, nickname, channels, reconnect)
+			#connect with a random nick (AIbot####)
+			irc, nickname = ircConnect(srv[0], srv[1], srv[2], srv[3], ident, realname, reconnect)
+			#set correct nick (from config) if not possible use previously generated random nick (AIbot####)
+			nickname = ircSetNick(irc, nick, nickname)
+			#join permanent channels (from config)
+			ircJoinChannels(irc, channels)
+			#display connection details
 			if isIrcConnected(irc, srv[0], srv[1], srv[2], srv[3], ident, realname, nickname, channels, 0):
-				print("", end="")
+				"""
+				"""
 			else:
-				print("", end="")
+				"""
+				"""
+			print("---\n")
 	chunk = ircmsg.split()
 	if len(chunk) > 0:
 		if ircmsg.startswith(":"):
@@ -309,27 +365,20 @@ while True:
 				irc.send(bytes("PONG " + chunk[1] + "\n", "UTF-8"))
 			case "PRIVMSG":
 				if chunk[2].startswith("#") and chunk[3] == ":" + nickname + ":":
-					print(ircmsg)
+					print(ircmsg, end="")
 					channel = chunk[2].replace(":", "")
 					question = ircmsg.split(nickname + ":")[1].strip()
+					profile = str(timeInUtc()) + " " + context
 					"""---"""
 					if model in anthropic_models:
 						""" Antropic """
-						messages = [
-#							{ "role": "system", "content": str(timeInUtc()) + context }
-						]
-						if history > 0:
-							for q, a in previous_QA[-history:]:
-							# add the previous questions and answers
-								messages.append({ "role": "user", "content": q })
-								messages.append({ "role": "assistant", "content": a })
-						# add the new question
-						messages.append({ "role": "user", "content": question })
+						messages = [] + prepMessages(history, previous_QA, question)
 						try:
 							response = ai.messages.create(
 								model=model,
 								max_tokens=max_tokens,
 								temperature=temperature,
+								system=profile,
 								messages=messages,
 							)
 							answers = response.content[0].text.strip()
@@ -350,17 +399,7 @@ while True:
 							print("ERROR: " + str(e) + "\n")
 					elif model in chatcompletion_models:
 						""" OpenAI """
-						# build the messages, starting with context (instructions)
-						messages = [
-							{ "role": "system", "content": str(timeInUtc()) + context }
-						]
-						if history > 0:
-							# add the previous questions and answers
-							for q, a in previous_QA[-history:]:
-								messages.append({ "role": "user", "content": q })
-								messages.append({ "role": "assistant", "content": a })
-						# add the new question
-						messages.append({ "role": "user", "content": question })
+						messages = [{ "role": "system", "content": profile }] + prepMessages(history, previous_QA, question)
 						try:
 							response = ai.ChatCompletion.create(
 								model=model,
