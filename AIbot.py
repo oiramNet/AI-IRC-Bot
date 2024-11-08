@@ -298,13 +298,10 @@ while True:
 	while True:
 		try:
 			ircmsg = getData(irc)
-#			print(ircmsg)
 			break
 		except UnicodeDecodeError:
-#			print("UTF ERROR")
 			continue
 		except:
-#			nickname = nick
 			if 'ircmsg' in globals():
 				print("ERROR: Connection to IRC lost (" + srv[0] + "). Reconnecting in " + str(reconnect) + " seconds...")
 				server_id = nextServer(server_id, server_id_max)
