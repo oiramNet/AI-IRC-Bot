@@ -24,7 +24,7 @@ model = claude-3-5-haiku-latest
 api_key = sk-...
 
 # context: valid for ChatGPT/ChatCompletion models only
-context = You are a helpful and friendly assistant with IQ of 200.
+context = You are helpful and friendly assistant.
 
 # history: valid for Claude/ChatCompletion and ChatGPT/ChatCompletion models only
 history = 10
