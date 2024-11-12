@@ -14,11 +14,13 @@ import openai
 import anthropic
 
 print("")
-print("**************************************************")
-print("* AI IRC Bot by Mariusz J. Handke (oiram@IRCnet) *")
-print("*                                                *")
-print("* SRC: https://github.com/oiramNet/AI-IRC-Bot    *")
-print("**************************************************")
+print("+----------------------------------------+")
+print("|               AI IRC Bot               |")
+print("|          by Mariusz J. Handke          |")
+print("|      oiram@IRCnet   oiram@IRCnet2      |")
+print("|                                        |")
+print("| https://github.com/oiramNet/AI-IRC-Bot |")
+print("+----------------------------------------+")
 print("")
 
 #
@@ -28,22 +30,28 @@ print("")
 # Lists of supported AI models
 
 # ChatGPT (OpenAI)
+#  REF: https://platform.openai.com/docs/models
 chatcompletion_models = ["gpt-4o-mini", "gpt-4o", "gpt-4", "gpt-4-turbo", "gpt-4-turbo-preview", "gpt-3.5-turbo"]
 completion_models = ["gpt-3.5-turbo-instruct", "babbage-002", "davinci-002"]
 images_models = ["dall-e-2", "dall-e-3"]
 
 # Claude(Anthropic)
+#  REF: https://docs.anthropic.com/en/docs/about-claude/models
 anthropic_models = ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"]
 
 # other global settings
 reconnect = 5
 
-# DEF: String of random characters
 def srand(N):
+	"""
+		Generate string of N random characters (uppercase letters, digits)
+	"""
 	return "".join(random.choices(string.ascii_uppercase + string.digits, k=N))
 
-# DEF: UTC time
 def timeInUtc():
+	"""
+		Generate string containing current date and time in UTC 
+	"""
 	dt = datetime.datetime.now(pytz.timezone('UTC'))
 	now_of_year = dt.strftime("%Y")
 	now_of_month = dt.strftime("%B")
@@ -54,8 +62,12 @@ def timeInUtc():
 	f"The current time in UTC is {now_of_time}."
 	return system_message_content
 
-# DEF: String to boolean
 def strtobool(val):
+	"""
+		Return BOOLEAN value of the input string
+			True: 'y'|'yes'|'t'|'true'|'on'|'1'
+			False: 'n'|'no'|'f'|'false'|'off'|'0'
+	"""
 	match val.lower().strip():
 		case 'y'|'yes'|'t'|'true'|'on'|'1':
 			return 1
@@ -64,19 +76,26 @@ def strtobool(val):
 		case _:
 			raise ValueError("Invalid logical value %r" % (val,))
 
-# DEF: Get data from socket and format as a string (UTF-8)
 def getData(sock):
+	"""
+		Pull (read) data (4096 bytes) from SOCKET and decode it as UTF-8
+	"""
 	return sock.recv(4096).decode("UTF-8")
 
-# DEF: Get next server
 def nextServer(id, idmax):
+	"""
+		Return index of next server on the list, or start from beginning
+	"""
 	if id == idmax:
 		return 0
 	else:
 		return id + 1
 
-# DEF: create socket and open connection
 def netConnect(server, port, usessl):
+	"""
+		Connect using SSL (if specified) to the remote server on specified port
+		and return SOCKET
+	"""
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	sock.connect((server, int(port)))
 	if strtobool(usessl):
@@ -86,16 +105,18 @@ def netConnect(server, port, usessl):
 		sock = context.wrap_socket(sock, server_hostname=server)
 	return sock
 
-# DEF: Authenticate with IRC server
 def ircAuth(irc, password, ident, realname, nickname):
+	"""
+		Authenticate with IRC server
+	"""
 	if password:
 		irc.send(bytes("PASS " + password + "\n", "UTF-8"))
 	irc.send(bytes("USER " + ident + " 0 * :" + realname + "\n", "UTF-8"))
 	irc.send(bytes("NICK " + nickname + "\n", "UTF-8"))
 
-# DEF: Set nickAuthenticate with IRC server
 def ircSetNick(irc, nick, nickname):
 	"""
+		Set nickname
 		nick - correct nickname (from config)
 		nickname - random nickname (eg. generated during connection)
 	"""
@@ -106,31 +127,32 @@ def ircSetNick(irc, nick, nickname):
 	match rcode:
 		case "432":
 			"""
-				invalid nickname
+				ERR_ERRONEUSNICKNAME (RFC1459)
 			"""
-			print("INFO: Invalid nickname (" + nick + "). Using random nickname (" + nickname + ")")
+			print("ERROR: Erroneus nickname (" + nick + "). Using random nickname instead (" + nickname + ")")
 		case "433":
 			"""
-				nickname in use
+				ERR_NICKNAMEINUSE (RFC1459)
 			"""
-			print("INFO: My nickname (" + nick + ") is in use. Using random nickname (" + nickname + ")")
+			print("ERROR: My nickname (" + nick + ") is in use. Using random nickname instead (" + nickname + ")")
 		case _:
 			"""
-				unknown RCODE
+				UNKNOWN RCODE
 			"""
 			print("INFO: RCODE = ", rcode)
 			rnick = nick
 	return rnick
 
-# DEF: Join channels
 def ircJoinChannels(irc, channels):
+	"""
+		Join channels
+	"""
 	irc.send(bytes("JOIN " + ",".join(channels) + "\n", "UTF-8"))
 #	ircmsg = ""
 #	while ircmsg.find("End of /NAMES list.") == -1:
 #		ircmsg = getData(irc)
 #		print("ircmsg = ", ircmsg)
 
-# DEF: Connect to IRC server
 def ircConnect(server, port, usessl, password, ident, realname, wait):
 	"""
 		Connect to IRC server using RANDOM nick
@@ -153,29 +175,29 @@ def ircConnect(server, port, usessl, password, ident, realname, wait):
 		match rcode:
 			case "001":
 				"""
-					ok
+					RPL_WELCOME (RFC2812)
+				"""
+			case "432":
+				"""
+					ERR_ERRONEUSNICKNAME (RFC1459)
 				"""
 			case "433":
 				"""
-					nickname in use
-					maybe do something
+					ERR_NICKNAMEINUSE (RFC1459)
 				"""
 			case _:
 				"""
-					unknown RCODE
+					UNKNOWN RCODE
 				"""
-				print("INFO: ", rcode)
+				print("INFO: RCODE = ", rcode)
 	except:
 		print("ERROR: Connection to " + server + " failed")
-	ircmsg = getData(irc)	#maybe not needed
-#	print("ircmsg3 = ", ircmsg, "\n")
-#	print("peer = ", irc.getpeername())
+	ircmsg = getData(irc)
 	return irc, nickname
 
-# DEF: Connect to IRC server
 def isIrcConnected(irc, server, port, usessl, password, ident, realname, nickname, channels, wait):
 	"""
-		if connected, display details
+		Check if connected to IRC server and display connection details
 	"""
 	try:
 		irc.getpeername()
@@ -189,8 +211,10 @@ def isIrcConnected(irc, server, port, usessl, password, ident, realname, nicknam
 		print("INFO: Not connected to IRC")
 		return False
 
-# DEF: Send message to IRC channel
 def sendMessageToIrcChannel(irc, channel, reply_to, message):
+	"""
+		Send message to IRC channel
+	"""
 	if reply_to != "":
 		irc.send(bytes("PRIVMSG " + channel + " :" + reply_to + ": ...\n", "UTF-8"))
 	msgs = [x.strip() for x in message]
@@ -206,8 +230,10 @@ def sendMessageToIrcChannel(irc, channel, reply_to, message):
 				irc.send(bytes("PRIVMSG " + channel + " :" + msg[:last_space_index] + "\n", "UTF-8"))
 				msg = msg[last_space_index:].lstrip()
 
-# DEF: create list of messages
 def prepMessages(history, previous_QA, question):
+	"""
+		Create list of messages
+	"""
 	messages = []
 	if history > 0:
 		for q, a in previous_QA[-history:]:
@@ -215,6 +241,7 @@ def prepMessages(history, previous_QA, question):
 			messages.append({ "role": "assistant", "content": a })
 	messages.append({ "role": "user", "content": question })
 	return messages
+
 
 #
 # CONFIGURATION
@@ -340,7 +367,13 @@ while True:
 
 		match command:
 			case "471" | "473" | "474" | "475":
-				print("INFO: Unable to join " + channel + ": Channel can be full, invite only, bot is banned or needs a key.\n")
+				"""
+					471: ERR_CHANNELISFULL (RFC1459)
+					473: ERR_INVITEONLYCHAN (RFC1459)
+					474: ERR_BANNEDFROMCHAN (RFC1459)
+					475: ERR_BADCHANNELKEY (RFC1459)
+				"""
+				print("ERROR: Unable to join " + channel + ": Channel can be full, invite only, bot is banned or needs a key.\n")
 			case "ERROR":
 				print("ERROR: Received an ERROR from the server. Reconnecting in " + str(reconnect) + " seconds...\n")
 				irc.close()
@@ -361,6 +394,9 @@ while True:
 			case "PING":
 				irc.send(bytes("PONG " + chunk[1] + "\n", "UTF-8"))
 			case "PRIVMSG":
+				"""
+					Processing channel message
+				"""
 				if chunk[2].startswith("#") and chunk[3] == ":" + nickname + ":":
 					print(ircmsg, end="")
 					channel = chunk[2].replace(":", "")
@@ -462,7 +498,6 @@ while True:
 				print("", end="")
 			case _:
 				print("", end="")
-#				print("INFO: Unknown command (" + command + ")")
 	else:
 		continue
 	time.sleep(1)
