@@ -10,8 +10,12 @@ import datetime
 import pytz
 import random
 import string
+"""
+AI API(s)
+"""
 import openai
 import anthropic
+
 
 print("")
 print("+----------------------------------------+")
@@ -47,6 +51,18 @@ def printDebug(debug, txt):
 	"""
 	if debug:
 		print("DEBUG: " + txt)
+
+def printError(txt):
+	"""
+	Print the error message
+	"""
+	print("ERROR: " + txt)
+
+def printInfo(txt):
+	"""
+	Print the info message
+	"""
+	print("INFO: " + txt)
 
 def srand(N):
 	"""
@@ -135,17 +151,17 @@ def ircSetNick(irc, nick, nickname):
 			"""
 			ERR_ERRONEUSNICKNAME (RFC1459)
 			"""
-			print("ERROR: Erroneus nickname (" + nick + "). Using random nickname instead (" + nickname + ")")
+			printError("Erroneus nickname (" + nick + "). Using random nickname instead (" + nickname + ")")
 		case "433":
 			"""
 			ERR_NICKNAMEINUSE (RFC1459)
 			"""
-			print("ERROR: My nickname (" + nick + ") is in use. Using random nickname instead (" + nickname + ")")
+			printError("My nickname (" + nick + ") is in use. Using random nickname instead (" + nickname + ")")
 		case _:
 			"""
 			UNKNOWN RCODE
 			"""
-			print("INFO: RCODE = ", rcode)
+			printInfo("RCODE = " + str(rcode))
 			rnick = nick
 	return rnick
 
@@ -167,7 +183,7 @@ def ircConnect(server, port, usessl, password, ident, realname, wait):
 	#generate 9 characters random nick (AIbot####)
 	nickname = ("AIbot" + srand(4))[:9]
 	try:
-		print("INFO: Connecting to " + server)
+		printInfo("Connecting to " + server)
 		irc = netConnect(server, port, usessl)
 		ircAuth(irc, password, ident, realname, nickname)
 		ircmsg = getData(irc)
@@ -195,9 +211,9 @@ def ircConnect(server, port, usessl, password, ident, realname, wait):
 				"""
 				UNKNOWN RCODE
 				"""
-				print("INFO: RCODE = ", rcode)
+				printInfo("RCODE = " + str(rcode))
 	except:
-		print("ERROR: Connection to " + server + " failed")
+		printError("Connection to " + server + " failed")
 	ircmsg = getData(irc)
 	return irc, nickname
 
@@ -207,14 +223,14 @@ def isIrcConnected(irc, server, port, usessl, password, ident, realname, nicknam
 	"""
 	try:
 		irc.getpeername()
-		print("INFO: Connected to IRC")
+		printInfo("Connected to IRC")
 		print("\tSERVER: " + server)
 		print("\tNICK: " + nickname)
 		print("\tCHANNELS: ", end="")
 		print(*channels, sep =', ')
 		return True
 	except socket.error:
-		print("INFO: Not connected to IRC")
+		printInfo("Not connected to IRC")
 		return False
 
 def sendMessageToIrcChannel(irc, channel, reply_to, message):
@@ -260,34 +276,32 @@ if len(sys.argv)>1:
 	# Read configuration file
 	conf_file = sys.argv[1]
 	if os.path.isfile(conf_file):
-		print("INFO: Loading configuration file (" + conf_file + ")")
+		printInfo("Loading configuration file (" + conf_file + ")")
 		config = configparser.ConfigParser()
 		config.read(conf_file)
 	else:
-		print("ERROR: Specified configuration file (" + conf_file + ") does not exist.\n")
+		printError("Specified configuration file (" + conf_file + ") does not exist.\n")
 		exit(1)
 else:
-	print("ERROR: Missing configuration file name.\n\nUSAGE: " + sys.argv[0] + " conf_file\n")
+	printError("Missing configuration file name.\n\nUSAGE: " + sys.argv[0] + " conf_file\n")
 	exit(1)
 
 try:
 	# Set up AI model
-	model = config.get('AI', 'model')
+	AI_MODEL = config.get('AI', 'model')
 	# Set up API KEY
-	api_key = config.get('AI', 'api_key')
-	# Create AI object based on model and assign API KEY
-	if (model in chatcompletion_models) | (model in images_models):
+	AI_API_KEY = config.get('AI', 'api_key')
+	# Create AI object based on AI_MODEL and assign AI_API_KEY
+	if (AI_MODEL in chatcompletion_models) | (AI_MODEL in images_models):
 		ai_type = "ChatGPT (OpenAI)"
-#		ai = openai.OpenAI()	# openai >= 1.x
-		ai = openai				# openai 0.28.x
-	elif model in anthropic_models:
+		ai = openai.OpenAI(api_key=AI_API_KEY)
+	elif (AI_MODEL in anthropic_models):
 		ai_type = "Claude (Anthropic)"
-		ai = anthropic.Anthropic()
+		ai = anthropic.Anthropic(api_key=AI_API_KEY)
 	else:
-		print("ERROR: Invalid model selected.\n")
+		printError("Invalid AI model selected.\n")
 		exit(1)
-	ai_type = ai_type + " and model " + model
-	ai.api_key = api_key
+	ai_type = ai_type + " and model " + AI_MODEL
 
 	# Set up AI parameters
 	temperature = config.getfloat('AI', 'temperature')
@@ -307,11 +321,10 @@ try:
 	channels = "".join(config.get('IRC', 'channels').split()).split(',')
 	accept_invites = config.getboolean('IRC', 'accept_invites', fallback=False)
 	rejoin_invited = config.getboolean('IRC', 'rejoin_invited', fallback=False)
-	debug = config.getboolean('IRC', 'debug', fallback=False)
+	DEBUG = config.getboolean('IRC', 'debug', fallback=False)
 
 except Exception as e:
-	print("ERROR: Missing or invalid configuration option(s)")
-	print(""  + str(e) + "\n")
+	printError("Missing or invalid configuration option(s)\n" + str(e) + "\n")
 	exit(1)
 
 
@@ -320,7 +333,7 @@ except Exception as e:
 # EXECUTION
 #
 
-print("INFO: This bot is configured to use " + ai_type)
+printInfo("This bot is configured to use " + ai_type)
 server_id = 0
 server_id_max = len(servers)-1
 irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -339,10 +352,10 @@ while True:
 			continue
 		except:
 			if 'ircmsg' in globals():
-				print("ERROR: Connection to IRC lost (" + srv[0] + "). Reconnecting in " + str(reconnect) + " seconds...")
+				printError("Connection to IRC lost (" + srv[0] + "). Reconnecting in " + str(reconnect) + " seconds...")
 				server_id = nextServer(server_id, server_id_max)
 			else:
-				print("INFO: Starting...")
+				printInfo("Starting...")
 			srv = servers[server_id].split(':')
 			#connect with a random nick (AIbot####)
 			irc, nickname = ircConnect(srv[0], srv[1], srv[2], srv[3], ident, realname, reconnect)
@@ -373,7 +386,7 @@ while True:
 			"""
 			Received server or channel message (FORMAT-2)
 			"""
-			printDebug(debug, "ircmsg = [" + ircmsg + "]")
+			printDebug(DEBUG, "ircmsg = [" + ircmsg + "]")
 
 #			if chunk[0][1:].lower() == server.lower():
 #				srvmsg = True
@@ -412,22 +425,22 @@ while True:
 				475: ERR_BADCHANNELKEY (RFC1459)
 				"""
 				channel = chunk[3].replace(":", "")
-				print("ERROR: Unable to join " + channel + ": Channel can be full, invite only, bot is banned or needs a key.\n")
+				printError("Unable to join " + channel + ": Channel can be full, invite only, bot is banned or needs a key.\n")
 			case "ERROR":
-				print("ERROR: Received an ERROR from the server. Reconnecting in " + str(reconnect) + " seconds...\n")
+				printError("Received an ERROR from the server. Reconnecting in " + str(reconnect) + " seconds...\n")
 				irc.close()
 				irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			case "INVITE":
 				if accept_invites:
 					channel = chunk[3].replace(":", "")
-					print("INFO: Invited into channel " + channel + " by " + who_full + ". Joining...\n")
+					printInfo("Invited into channel " + channel + " by " + who_full + ". Joining...\n")
 					irc.send(bytes("JOIN " + channel + "\n", "UTF-8"))
 			case "JOIN":
 				""" no actions """
 			case "KICK":
 				if chunk[3].lower() == nickname.lower():
 					channel = chunk[2].replace(":", "")
-					print("INFO: Kicked from channel " + channel + " by " + who_full + ".", end="")
+					printInfo("Kicked from channel " + channel + " by " + who_full + ".")
 					if channel in channels or rejoin_invited:
 						print(" Rejoining...\n")
 						irc.send(bytes("JOIN " + channel + "\n", "UTF-8"))
@@ -450,36 +463,34 @@ while True:
 					""" pull out the question """
 					question = ircmsg[len(chunk0to3):].strip()
 					print(who_full + " : " + question)
-					""" process message in accordance with selected model """
-					if model in chatcompletion_models:
+					""" process message in accordance with selected AI_MODEL """
+					if (AI_MODEL in chatcompletion_models):
 						""" OpenAI """
 						messages = [{ "role": "system", "content": profile }] + prepMessages(history, previous_QA, question)
 						try:
-#							response = ai.chat.completions.create(
-							response = ai.ChatCompletion.create(
-								model=model,
+							response = ai.chat.completions.create(
+								model=AI_MODEL,
 								max_tokens=max_tokens,
 								temperature=temperature,
 								messages=messages,
 								frequency_penalty=frequency_penalty,
 								presence_penalty=presence_penalty,
-								request_timeout=request_timeout,
 								response_format={"type": "text"}
 							)
 							answers = response.choices[0].message.content.strip()
 							previous_QA.append((question, answers))
 							sendMessageToIrcChannel(irc, channel, who_nick, answers.split('\n'))
 						except ai.error.Timeout as e:
-							print("ERROR: " + str(e) + "\n")
+							printError(str(e) + "\n")
 						except ai.error.OpenAIError as e:
-							print("ERROR: " + str(e) + "\n")
+							printError(str(e) + "\n")
 						except Exception as e:
-							print("ERROR: " + str(e) + "\n")
-					elif model in images_models:
+							printError(str(e) + "\n")
+					elif (AI_MODEL in images_models):
 						""" OpenAI """
 						try:
 							response = ai.Image.create(
-								model=model,
+								model=AI_MODEL,
 								prompt=question,
 								n=1,
 								size="1024x1024"
@@ -489,17 +500,17 @@ while True:
 							short_url = type_tiny.tinyurl.short(long_url)
 							sendMessageToIrcChannel(irc, channel, who_nick, short_url)
 						except ai.error.Timeout as e:
-							print("ERROR: " + str(e) + "\n")
+							printError(str(e) + "\n")
 						except ai.error.OpenAIError as e:
-							print("ERROR: " + str(e) + "\n")
+							printError(str(e) + "\n")
 						except Exception as e:
-							print("ERROR: " + str(e) + "\n")
-					elif model in anthropic_models:
-						""" Antropic """
+							printError(str(e) + "\n")
+					elif (AI_MODEL in anthropic_models):
+						""" Anthropic """
 						messages = [] + prepMessages(history, previous_QA, question)
 						try:
 							response = ai.messages.create(
-								model=model,
+								model=AI_MODEL,
 								max_tokens=max_tokens,
 								temperature=temperature,
 								system=profile,
@@ -509,20 +520,20 @@ while True:
 							previous_QA.append((question, answers))
 							sendMessageToIrcChannel(irc, channel, who_nick, answers.split('\n'))
 						except ai.APIConnectionError as e:
-							print("ERROR: The server could not be reached." + str(e) + "\n")
+							printError("The server could not be reached." + str(e) + "\n")
 							print(e.__cause__)
 						except ai.RateLimitError as e:
 							print("A 429 status code was received; we should back off a bit.")
-							print("ERROR: A 429 status code was received; we should back off a bit.\n")
+							printError("A 429 status code was received; we should back off a bit.\n")
 						except ai.APIStatusError as e:
 							print("Another non-200-range status code was received")
-							print("ERROR: Another non-200-range status code was received.\n")
+							printError("Another non-200-range status code was received.\n")
 							print(e.status_code)
 							print(e.response)
 						except Exception as e:
-							print("ERROR: " + str(e) + "\n")
+							printError(str(e) + "\n")
 					else:
-						print("ERROR: Invalid model selected.\n")
+						printError("Invalid AI model selected.\n")
 						continue
 			case "QUIT":
 				print("", end="")

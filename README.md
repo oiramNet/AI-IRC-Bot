@@ -8,22 +8,21 @@ __AI IRC Bot__ is a simple IRC bot written in Python. It was initially forked fr
 1. Create an account and obtain your API key
    * ChatGPT (OpenAI): https://platform.openai.com/account/api-keys
    * Claude (Anthropic): https://console.anthropic.com/settings/keys
-2. Install Python3 and the official Python bindings (__pyshorteners__; __pytz__; __openai__: 0.28.0, __0.28.1__; __anthropic__: latest)
-   > Note that only version __0.28.x__ of __openai__ is supported, and the latest version is __0.28.1__.
+2. Install Python3 and the official Python bindings (__pyshorteners__; __pytz__; __openai__; __anthropic__)
    * Debian/Ubuntu
      ```
      apt install python3 python3-pip
-     pip3 install pyshorteners pytz openai==0.28.1 anthropic
+     pip3 install pyshorteners pytz openai anthropic
      ```
    * RedHat/CentOS
      ```
      yum install python3 python3-pip
-     pip3 install pyshorteners pytz openai==0.28.1 anthropic
+     pip3 install pyshorteners pytz openai anthropic
      ```
    * FreeBSD
      ```
      pkg install python311 py311-pip
-     pip install pyshorteners pytz openai==0.28.1 anthropic
+     pip install pyshorteners pytz openai anthropic
      ```
 
 ## Installation
