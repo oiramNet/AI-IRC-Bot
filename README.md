@@ -44,9 +44,7 @@ cp AIbot.conf.sample SampleBot.conf
 __AI IRC Bot__ can use any of the below models.
 * ChatGPT (OpenAI): https://platform.openai.com/docs/models
   * Chat Completion models
-    > __gpt-4o-mini__, gpt-4o, gpt-4, gpt-4-turbo, gpt-4-turbo-preview, gpt-3.5-turbo
-  * Completion models
-    > gpt-3.5-turbo-instruct, babbage-002, davinci-002
+    > gpt-4o, __gpt-4o-mini__, gpt-4, gpt-4-turbo, gpt-4-turbo-preview, gpt-3.5-turbo
   * Image creation models
     > dall-e-2, dall-e-3
 * Claude (Anthropic): https://docs.anthropic.com/en/docs/about-claude/models
@@ -87,7 +85,7 @@ screen -dR
 ```
 
 ## Interaction
-__AI IRC Bot__ will interact only if you direct your question using its nickname.
+__AI IRC Bot__ is designed to process messages on standard channels (#CHANNEL) and will interact (respond) only to messages directed to it using its nickname (BOTNAME: MESSAGE).
 ```
 12:34:12 < user> SampleBot: how are you?
 12:34:13 < SampleBot> I'm doing well, thank you for asking! How are you today? Is there anything specific I can help you with?

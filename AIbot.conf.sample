@@ -3,8 +3,7 @@
 #
 # ChatGPT (OpenAI)
 #  REF: https://platform.openai.com/docs/models
-#  ChatCompletion models: gpt-4o-mini, gpt-4o, gpt-4, gpt-4-turbo, gpt-4-turbo-preview, gpt-3.5-turbo
-#  Completion models: gpt-3.5-turbo-instruct, babbage-002, davinci-002
+#  ChatCompletion models: gpt-4o, gpt-4o-mini, gpt-4, gpt-4-turbo, gpt-4-turbo-preview, gpt-3.5-turbo
 #  Images models: dall-e-2, dall-e-3
 #
 # Claude (Anthropic)
@@ -49,16 +48,19 @@ request_timeout = 60
 
 
 [IRC]
+# debug: print some limited debugging messages (default: false)
+debug = false
+
 # servers: list of servers, separated with comma (,), each server defined as HOST:PORT:SSL:[PASSWORD]
 servers = tngnet.ircnet.io:6679:true:,irc.nlnog.net:6667:false:
 
 # channels: list of permanent channels, separated with comma (,)
 channels = #oiram
 
-# accept_invites: accept invitation to join non-permanent channel
-accept_invites = true
+# accept_invites: accept invitation to join non-permanent channel (default: false)
+accept_invites = false
 
-# rejoin_invited: re-join non-permanent channel to which bot was invited
+# rejoin_invited: re-join non-permanent channel to which bot was invited (default: false)
 rejoin_invited = false
 
 # nickname: 
