@@ -461,13 +461,16 @@ while True:
 				"""
 				chunk0to3 = chunk[0] + " " + chunk[1] + " " + chunk[2] + " " + chunk[3] + " "
 				channel = chunk[2].replace(":", "")
-				to = chunk[3].replace(":", "")
-				if channel.startswith("#") and to.lower() == nickname.lower():
+				""" to whom message is addressed """
+				to = chunk[3][1:]
+				""" respond if channel starts with # and if message is addressed to me """
+				if (channel.startswith("#")) and ((to.lower()) == (nickname.lower() + ":")):
 					""" prepare assistant's profile with current time included """
 					profile = str(timeInUtc()) + " " + context
 					""" pull out the question """
 					question = ircmsg[len(chunk0to3):].strip()
-					print(who_full + " : " + question)
+					""" display question on console (CHANNEL : WHO_FULL : QUESTION) """
+					print(channel + " :: " + who_full + " :: " + question)
 					""" process message in accordance with selected AI_MODEL """
 					if (AI_MODEL in chatcompletion_models):
 						""" OpenAI """
