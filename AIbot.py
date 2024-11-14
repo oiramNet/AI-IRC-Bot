@@ -239,7 +239,7 @@ def sendMessageToIrcChannel(irc, channel, reply_to, message):
 	"""
 	if reply_to != "":
 		irc.send(bytes("PRIVMSG " + channel + " :" + reply_to + ": ...\n", "UTF-8"))
-	msgs = [x.strip() for x in message]
+	msgs = [x.strip() for x in message.split('\n')]
 	for msg in msgs:
 		while len(msg) > 0:
 			if len(msg) <= 392:
@@ -252,16 +252,32 @@ def sendMessageToIrcChannel(irc, channel, reply_to, message):
 				irc.send(bytes("PRIVMSG " + channel + " :" + msg[:last_space_index] + "\n", "UTF-8"))
 				msg = msg[last_space_index:].lstrip()
 
-def prepMessages(history, previous_QA, question):
+def getChannelHistory(previous_QA, channel, N):
 	"""
-	Create list of messages
+	Create list of last-N Q/A pairs for the channel. If N <= 0 return all pairs.
 	"""
+	previous_QA_chan = []
+	for sub_arr in previous_QA:
+		if sub_arr[0].lower() == channel.lower():
+			previous_QA_chan.append(sub_arr)
+	if (N < 1):
+		return previous_QA_chan
+	else:
+		return previous_QA_chan[-N:]
+
+def prepMessages(previous_QA, channel, history, question):
+	"""
+	Create list of AI-readable messages
+	"""
+	#get previous Q/A pairs
+	previous_QA_chan = getChannelHistory(previous_QA, channel, history)
+	#change into list of AI-readable messages (user/assistant pairs)
 	messages = []
-	if history > 0:
-		for q, a in previous_QA[-history:]:
-			messages.append({ "role": "user", "content": q })
-			messages.append({ "role": "assistant", "content": a })
-	messages.append({ "role": "user", "content": question })
+	for c, q, a in previous_QA_chan[:]:
+		messages.append({"role": "user", "content": q})
+		messages.append({"role": "assistant", "content": a})
+	#append current question
+	messages.append({"role": "user", "content": question})
 	return messages
 
 
@@ -387,17 +403,6 @@ while True:
 			Received server or channel message (FORMAT-2)
 			"""
 			printDebug(DEBUG, "ircmsg = [" + ircmsg + "]")
-
-#			if chunk[0][1:].lower() == server.lower():
-#				srvmsg = True
-#			else
-#				srvmsg = False
-
-#			srvmsg = (chunk[0][1:].lower() == srv[0].lower())
-#			print("A = " + chunk[0][1:].lower())
-#			print("B = " + srv[0].lower())
-#			print("srvmsg = [", srvmsg, "]")
-
 			command = chunk[1]
 			who_full = chunk[0][1:]
 			who_nick = who_full.split("!")[0]
@@ -466,7 +471,7 @@ while True:
 					""" process message in accordance with selected AI_MODEL """
 					if (AI_MODEL in chatcompletion_models):
 						""" OpenAI """
-						messages = [{ "role": "system", "content": profile }] + prepMessages(history, previous_QA, question)
+						messages = [{ "role": "system", "content": profile }] + prepMessages(previous_QA, channel, history, question)
 						try:
 							response = ai.chat.completions.create(
 								model=AI_MODEL,
@@ -478,8 +483,8 @@ while True:
 								response_format={"type": "text"}
 							)
 							answers = response.choices[0].message.content.strip()
-							previous_QA.append((question, answers))
-							sendMessageToIrcChannel(irc, channel, who_nick, answers.split('\n'))
+							previous_QA.append((channel, question, answers))
+							sendMessageToIrcChannel(irc, channel, who_nick, answers)
 						except ai.error.Timeout as e:
 							printError(str(e) + "\n")
 						except ai.error.OpenAIError as e:
@@ -507,7 +512,7 @@ while True:
 							printError(str(e) + "\n")
 					elif (AI_MODEL in anthropic_models):
 						""" Anthropic """
-						messages = [] + prepMessages(history, previous_QA, question)
+						messages = [] + prepMessages(previous_QA, channel, history, question)
 						try:
 							response = ai.messages.create(
 								model=AI_MODEL,
@@ -517,16 +522,14 @@ while True:
 								messages=messages,
 							)
 							answers = response.content[0].text.strip()
-							previous_QA.append((question, answers))
-							sendMessageToIrcChannel(irc, channel, who_nick, answers.split('\n'))
+							previous_QA.append((channel, question, answers))
+							sendMessageToIrcChannel(irc, channel, who_nick, answers)
 						except ai.APIConnectionError as e:
 							printError("The server could not be reached." + str(e) + "\n")
 							print(e.__cause__)
 						except ai.RateLimitError as e:
-							print("A 429 status code was received; we should back off a bit.")
 							printError("A 429 status code was received; we should back off a bit.\n")
 						except ai.APIStatusError as e:
-							print("Another non-200-range status code was received")
 							printError("Another non-200-range status code was received.\n")
 							print(e.status_code)
 							print(e.response)

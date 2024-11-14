@@ -37,7 +37,7 @@ __AI IRC Bot__ uses a plain-text file as its configuration file. The package inc
 cd AI-IRC-Bot
 cp AIbot.conf.sample SampleBot.conf
 ```
-> Some of settings only apply to specific __AI__ models. Make sure to check the sample configuration file for details.
+> Some of the settings apply only to the specific __AI API__ or models. Make sure to check the sample configuration file for details.
 
 ### Supported models
 __AI IRC Bot__ can use any of the below models.
