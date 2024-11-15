@@ -1,73 +1,116 @@
 [AI]
-# model: defines model to be used
-#
-# ChatGPT (OpenAI)
-#  REF: https://platform.openai.com/docs/models
-#  ChatCompletion models: gpt-4o, gpt-4o-mini, gpt-4, gpt-4-turbo, gpt-4-turbo-preview, gpt-3.5-turbo
-#  Images models: dall-e-2, dall-e-3
-#
-# Claude (Anthropic)
-#  REF: https://docs.anthropic.com/en/docs/about-claude/models
-#  ChatCompletion models: claude-3-5-sonnet-latest, claude-3-5-haiku-latest
-#
-model = claude-3-5-haiku-latest
+# model
+#	Purpose:	Model to be used.
+#	Validity:	N/A
+#	Default:	N/A
+model = gpt-4o-mini
 
-# api_key: API Key
-#
-# ChatGPT (OpenAI)
-#  https://platform.openai.com/account/api-keys
-#
-# Claude (Anthropic)
-#  https://console.anthropic.com/settings/keys
-#
+# api_key
+#	Purpose:	API Key
+#	Validity:	any model
+#	Default:	N/A
 api_key = sk-...
 
-# context: valid for ChatGPT/ChatCompletion models only
+# context
+#	Purpose:	Describe behavior of the bot.
+#	Validity:	Claude/ChatCompletion, ChatGPT/ChatCompletion
+#	Default:	You are helpful and friendly assistant.
 context = You are helpful and friendly assistant.
 
-# history: valid for Claude/ChatCompletion and ChatGPT/ChatCompletion models only
-history = 10
+# history
+#	Purpose:	Set number of previous questions/answers to be kept.
+#	Validity:	Claude/ChatCompletion, ChatGPT/ChatCompletion
+#	Default:	0
+history = 0
 
-# temperature: valid for Claude/ChatCompletion, ChatGPT/ChatCompletion and ChatGPT/Completion models only
+# use_nick
+# 	Purpose:	While responding, address user with their nick.
+# 	Validity:	Claude/ChatCompletion, ChatGPT/ChatCompletion
+# 	Default:	true
+use_nick = true
+
+# temperature
+#	Purpose:	Defines how random each subsequent word in the chat output is.
+#	Validity:	Claude/ChatCompletion, ChatGPT/ChatCompletion
+#	Default:	0.5
 temperature = 0.5
 
-# max_tokens: valid for Claude/ChatCompletion, ChatGPT/ChatCompletion and ChatGPT/Completion models only
-max_tokens = 1000
-
-# top_p: valid for Claude/ChatCompletion, ChatGPT/ChatCompletion and ChatGPT/Completion models only
+# top_p
+#	Purpose:	An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.
+#	Validity:	Claude/ChatCompletion, ChatGPT/ChatCompletion
+#	Default:	1 (meaning 100%)
 top_p = 1
 
-# frequency_penalty: valid for ChatGPT/ChatCompletion and ChatGPT/Completion models only
+# max_tokens
+#	Purpose:	The maximum number of tokens to generate in the response.
+#	Validity:	Claude/ChatCompletion, ChatGPT/ChatCompletion
+#	Default:	1000
+max_tokens = 1000
+
+# frequency_penalty
+#	Purpose:	Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
+#	Validity:	ChatGPT/ChatCompletion
+#	Default:	0
 frequency_penalty = 0
 
-# presence_penalty: valid for ChatGPT/ChatCompletion and ChatGPT/Completion models only
+# presence_penalty
+#	Purpose:	Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
+#	Validity:	ChatGPT/ChatCompletion
+#	Default:	0
 presence_penalty = 0
 
-# request_timeout: valid for ChatGPT/ChatCompletion and ChatGPT/Completion models only
+# request_timeout
+#	Purpose:	Timeout processing request by API. (OBSOLETE)
+#	Validity:	ChatGPT/ChatCompletion
+#	Default:	60
 request_timeout = 60
 
 
 [IRC]
-# debug: print some limited debugging messages (default: false)
+# debug
+#	Purpose:	Display some limited debugging messages
+#	Validity:	N/A
+#	Default:	false
 debug = false
 
-# servers: list of servers, separated with comma (,), each server defined as HOST:PORT:SSL:[PASSWORD]
+# servers
+#	Purpose:	List of servers, separated with comma (,), each server defined as HOST:PORT:SSL:[PASSWORD]
+#	Validity:	N/A
+#	Default:	N/A
 servers = tngnet.ircnet.io:6679:true:,irc.nlnog.net:6667:false:
 
-# channels: list of permanent channels, separated with comma (,)
+# channels
+#	Purpose:	List of permanent channels, separated with comma (,). Supported only standard channels (#NAME).
+#	Validity:	N/A
+#	Default:	N/A
 channels = #oiram
 
-# accept_invites: accept invitation to join non-permanent channel (default: false)
+# accept_invites
+#	Purpose:	Accept invitation to join non-permanent channel.
+#	Validity:	N/A
+#	Default:	false
 accept_invites = false
 
-# rejoin_invited: re-join non-permanent channel to which bot was invited (default: false)
+# rejoin_invited
+#	Purpose:	Allow to re-join non-permanent channel to which bot was invited.
+#	Validity:	N/A
+#	Default:	false
 rejoin_invited = false
 
-# nickname: 
+# nickname
+#	Purpose:	Nickname of the bot.
+#	Validity:	N/A
+#	Default:	N/A
 nickname = SampleBot
 
-# ident:
+# ident
+#	Purpose:	The ident of the bot.
+#	Validity:	N/A
+#	Default:	N/A
 ident = SampleBot
 
-# realname: real name
+# realname
+#	Purpose:	Real name of the bot.
+#	Validity:	N/A
+#	Default:	N/A
 realname = Sample Bot

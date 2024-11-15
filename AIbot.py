@@ -359,24 +359,25 @@ try:
 	ai_type = ai_type + " and model " + AI_MODEL
 
 	# Set up AI parameters
-	temperature = config.getfloat('AI', 'temperature')
-	max_tokens = config.getint('AI', 'max_tokens')
-	top_p = config.getint('AI', 'top_p')
-	frequency_penalty = config.getint('AI', 'frequency_penalty')
-	presence_penalty = config.getint('AI', 'presence_penalty')
-	request_timeout = config.getint('AI', 'request_timeout')
+	TEMPERATURE = config.getfloat('AI', 'temperature', fallback=0.5)
+	TOP_P = config.getint('AI', 'top_p', fallback=1)
+	MAX_TOKENS = config.getint('AI', 'max_tokens', fallback=1000)
+	FREQUENCY_PENALTY = config.getint('AI', 'frequency_penalty', fallback=0)
+	PRESENCE_PENALTY = config.getint('AI', 'presence_penalty', fallback=0)
+	REQUEST_TIMEOUT = config.getint('AI', 'request_timeout', fallback=60)
 	CONTEXT = config.get('AI', 'context', fallback="You are helpful and friendly assistant.")
 	HISTORY = config.getint('AI', 'history', fallback=0)
+	USE_NICK = config.getboolean('AI', 'use_nick', fallback=True)
 
 	# Set up IRC connection settings
-	servers = "".join(config.get('IRC', 'servers').split()).split(',')
-	ident = config.get('IRC', 'ident')
-	realname = config.get('IRC', 'realname')
-	nick = config.get('IRC', 'nickname')[:9]
-	channels = "".join(config.get('IRC', 'channels').split()).split(',')
-	accept_invites = config.getboolean('IRC', 'accept_invites', fallback=False)
-	rejoin_invited = config.getboolean('IRC', 'rejoin_invited', fallback=False)
 	DEBUG = config.getboolean('IRC', 'debug', fallback=False)
+	SERVERS = "".join(config.get('IRC', 'servers').split()).split(',')
+	IDENT = config.get('IRC', 'ident')
+	REALNAME = config.get('IRC', 'realname')
+	NICK = config.get('IRC', 'nickname')[:9]
+	CHANNELS = "".join(config.get('IRC', 'channels').split()).split(',')
+	ACCEPT_INVITES = config.getboolean('IRC', 'accept_invites', fallback=False)
+	REJOIN_INVITED = config.getboolean('IRC', 'rejoin_invited', fallback=False)
 
 except Exception as e:
 	printError("Missing or invalid configuration option(s)\n" + str(e) + "\n")
@@ -390,7 +391,7 @@ except Exception as e:
 
 printInfo("This bot is configured to use " + ai_type)
 server_id = 0
-server_id_max = len(servers)-1
+server_id_max = len(SERVERS)-1
 irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 previous_QA = []
 
@@ -406,29 +407,29 @@ while True:
 		except UnicodeDecodeError:
 			continue
 		except:
-			if 'ircmsg' in globals():
+			if ('ircmsg' in globals()):
 				printError("Connection to IRC lost (" + srv[0] + "). Reconnecting in " + str(reconnect) + " seconds...")
 				server_id = nextServer(server_id, server_id_max)
 			else:
 				printInfo("Starting...")
-			srv = servers[server_id].split(':')
+			srv = SERVERS[server_id].split(':')
 			#connect with a random nick (AIbot####)
-			irc, nickname = ircConnect(srv[0], srv[1], srv[2], srv[3], ident, realname, reconnect)
+			irc, nickname = ircConnect(srv[0], srv[1], srv[2], srv[3], IDENT, REALNAME, reconnect)
 			#set correct nick (from config) if not possible use previously generated random nick (AIbot####)
-			nickname = ircSetNick(irc, nick, nickname)
+			nickname = ircSetNick(irc, NICK, nickname)
 			#join permanent channels (from config)
-			ircJoinChannels(irc, channels)
+			ircJoinChannels(irc, CHANNELS)
 			#display connection details
-#			if isIrcConnected(irc, srv[0], srv[1], srv[2], srv[3], ident, realname, nickname, channels, 0):
+#			if isIrcConnected(irc, srv[0], srv[1], srv[2], srv[3], IDENT, REALNAME, nickname, CHANNELS, 0):
 #				"""
 #				"""
 #			else:
 #				"""
 #				"""
-			ircConnectionDetails(irc, srv[0], srv[1], srv[2], srv[3], ident, realname, nickname, channels)
+			ircConnectionDetails(irc, srv[0], srv[1], srv[2], srv[3], IDENT, REALNAME, nickname, CHANNELS)
 			print("---\n")
 
-	if len(ircmsg) > 0:
+	if (len(ircmsg) > 0):
 		"""
 		Split received data into segments depending on message format
 		FORMAT-1: [command] [:server]
@@ -438,7 +439,7 @@ while True:
 							full FORMAT-2: [:sender] [command] [channel] [:USER:] [text]
 		"""
 		chunk = ircmsg.split()
-		if chunk[0].startswith(":"):
+		if (chunk[0].startswith(":")):
 			"""
 			Received server or channel message (FORMAT-2)
 			"""
@@ -476,17 +477,17 @@ while True:
 				irc.close()
 				irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			case "INVITE":
-				if accept_invites:
+				if (ACCEPT_INVITES):
 					channel = chunk[3].replace(":", "")
 					printInfo("Invited into channel " + channel + " by " + who_full + ". Joining...\n")
 					irc.send(bytes("JOIN " + channel + "\n", "UTF-8"))
 			case "JOIN":
 				""" no actions """
 			case "KICK":
-				if chunk[3].lower() == nickname.lower():
+				if (chunk[3].lower() == nickname.lower()):
 					channel = chunk[2].replace(":", "")
 					printInfo("Kicked from channel " + channel + " by " + who_full + ".")
-					if channel in channels or rejoin_invited:
+					if (channel in CHANNELS) or (REJOIN_INVITED):
 						print(" Rejoining...\n")
 						irc.send(bytes("JOIN " + channel + "\n", "UTF-8"))
 					else:
@@ -507,9 +508,10 @@ while True:
 				if (channel.startswith("#")) and ((to.lower()) == (nickname.lower() + ":")):
 					""" set the history """
 					leaveInChannelHistory(previous_QA, channel, HISTORY)
-					""" prepare assistant's profile with current time included """
-#					profile = timeInUtc() + " " + CONTEXT
-					profile = timeInUtc() + " " + CONTEXT + " When responding, address person using their nickname, which is " + who_nick
+					""" prepare assistant's profile (instructions) with current time included """
+					profile = timeInUtc() + " " + CONTEXT
+					if (USE_NICK):
+						profile += " When responding, address the person using their nickname. This question was asked by a person who's nickname is " + who_nick + "."
 					""" pull out the question """
 					question = ircmsg[len(chunk0to3):].strip()
 					""" display question on console (CHANNEL : WHO_FULL : QUESTION) """
@@ -521,11 +523,11 @@ while True:
 						try:
 							response = ai.chat.completions.create(
 								model=AI_MODEL,
-								max_tokens=max_tokens,
-								temperature=temperature,
+								max_tokens=MAX_TOKENS,
+								temperature=TEMPERATURE,
 								messages=messages,
-								frequency_penalty=frequency_penalty,
-								presence_penalty=presence_penalty,
+								frequency_penalty=FREQUENCY_PENALTY,
+								presence_penalty=PRESENCE_PENALTY,
 								response_format={"type": "text"}
 							)
 							answers = response.choices[0].message.content.strip()
@@ -562,8 +564,8 @@ while True:
 						try:
 							response = ai.messages.create(
 								model=AI_MODEL,
-								max_tokens=max_tokens,
-								temperature=temperature,
+								max_tokens=MAX_TOKENS,
+								temperature=TEMPERATURE,
 								system=profile,
 								messages=messages,
 							)
