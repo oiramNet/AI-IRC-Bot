@@ -2,14 +2,14 @@ import os
 import sys
 import socket
 import ssl
-import time
 import configparser
-import pyshorteners
-from typing import Union, Tuple
+import time
 import datetime
 import pytz
+from typing import Union, Tuple
 import random
 import string
+import pyshorteners
 """
 AI API(s)
 """
@@ -70,19 +70,25 @@ def srand(N):
 	"""
 	return "".join(random.choices(string.ascii_uppercase + string.digits, k=N))
 
-def timeInUtc():
+def nowUTC():
 	"""
-	Generate string containing current date and time in UTC 
+	Get current date/time in 24-hour format in UTC
 	"""
-	dt = datetime.datetime.now(pytz.timezone('UTC'))
+	return datetime.datetime.now(pytz.timezone('UTC'))
+
+def todayIsUTC():
+	"""
+	Generate string containing current date and time in 24-hour format in UTC 
+	"""
+	dt = nowUTC()
 	now_of_year = dt.strftime("%Y")
 	now_of_month = dt.strftime("%B")
 	now_of_day = dt.strftime("%d")
 	now_of_wday = dt.strftime("%A")
-	now_of_time = dt.strftime("%H:%M")
-	system_message_content = f"Today is {now_of_wday}, the year is {now_of_year}, the month is {now_of_month}, and the date is {now_of_day}. " \
-	f"The current time in UTC is {now_of_time}."
-	return str(system_message_content)
+	now_of_time = dt.strftime("%H:%M:%S")
+	x = "Today is " + now_of_wday + ", the day is " + now_of_day + ", the month is " + now_of_month + ", and the year is " + now_of_year + ". "
+	x += "The current time in 24-hour format and UTC time zone is " + now_of_time + ". "
+	return x
 
 def strtobool(val):
 	"""
@@ -312,7 +318,7 @@ def prepMessages(previous_QA, channel, history, question):
 	previous_QA_chan = getChannelHistory(previous_QA, channel, history)
 	#change into list of AI-readable messages (user/assistant pairs)
 	messages = []
-	for c, q, a in previous_QA_chan[:]:
+	for c, t, q, a in previous_QA_chan[:]:
 		messages.append({"role": "user", "content": q})
 		messages.append({"role": "assistant", "content": a})
 	#append current question
@@ -393,6 +399,9 @@ printInfo("This bot is configured to use " + ai_type)
 server_id = 0
 server_id_max = len(SERVERS)-1
 irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+"""
+ELEMENT FORMAT: CHANNEL, TIMESTAMP, QUESTION, ANSWER
+"""
 previous_QA = []
 
 
@@ -509,7 +518,7 @@ while True:
 					""" set the history """
 					leaveInChannelHistory(previous_QA, channel, HISTORY)
 					""" prepare assistant's profile (instructions) with current time included """
-					profile = timeInUtc() + " " + CONTEXT
+					profile = todayIsUTC() + CONTEXT
 					if (USE_NICK):
 						profile += " When responding, address the person using their nickname. This question was asked by a person who's nickname is " + who_nick + "."
 					""" pull out the question """
@@ -531,7 +540,7 @@ while True:
 								response_format={"type": "text"}
 							)
 							answers = response.choices[0].message.content.strip()
-							previous_QA.append((channel, question, answers))
+							previous_QA.append((channel, nowUTC().timestamp(), question, answers))
 							sendMessageToIrcChannel(irc, channel, who_nick, answers)
 						except ai.error.Timeout as e:
 							printError(str(e) + "\n")
@@ -570,7 +579,7 @@ while True:
 								messages=messages,
 							)
 							answers = response.content[0].text.strip()
-							previous_QA.append((channel, question, answers))
+							previous_QA.append((channel, nowUTC().timestamp(), question, answers))
 							sendMessageToIrcChannel(irc, channel, who_nick, answers)
 						except ai.APIConnectionError as e:
 							printError("The server could not be reached." + str(e) + "\n")
