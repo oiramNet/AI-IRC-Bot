@@ -82,7 +82,7 @@ def timeInUtc():
 	now_of_time = dt.strftime("%H:%M")
 	system_message_content = f"Today is {now_of_wday}, the year is {now_of_year}, the month is {now_of_month}, and the date is {now_of_day}. " \
 	f"The current time in UTC is {now_of_time}."
-	return system_message_content
+	return str(system_message_content)
 
 def strtobool(val):
 	"""
@@ -121,10 +121,10 @@ def netConnect(server, port, usessl):
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	sock.connect((server, int(port)))
 	if strtobool(usessl):
-		context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-		context.check_hostname = False
-		context.verify_mode = ssl.CERT_NONE
-		sock = context.wrap_socket(sock, server_hostname=server)
+		sslcontext = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+		sslcontext.check_hostname = False
+		sslcontext.verify_mode = ssl.CERT_NONE
+		sock = sslcontext.wrap_socket(sock, server_hostname=server)
 	return sock
 
 def ircAuth(irc, password, ident, realname, nickname):
@@ -233,6 +233,20 @@ def isIrcConnected(irc, server, port, usessl, password, ident, realname, nicknam
 		printInfo("Not connected to IRC")
 		return False
 
+def ircConnectionDetails(irc, server, port, usessl, password, ident, realname, nickname, channels):
+	"""
+	Display IRC connection details
+	"""
+	try:
+		irc.getpeername()
+		printInfo("Connected to IRC")
+		print("\tSERVER: " + server)
+		print("\tNICK: " + nickname)
+		print("\tCHANNELS: ", end="")
+		print(*channels, sep =', ')
+	except socket.error:
+		printInfo("Not connected to IRC")
+
 def sendMessageToIrcChannel(irc, channel, reply_to, message):
 	"""
 	Send message to IRC channel
@@ -254,16 +268,41 @@ def sendMessageToIrcChannel(irc, channel, reply_to, message):
 
 def getChannelHistory(previous_QA, channel, N):
 	"""
-	Create list of last-N Q/A pairs for the channel. If N <= 0 return all pairs.
+	Create list of last-N Q/A pairs for the channel.
+		N > 0 return N pairs
+		N = 0 do not return any pairs
+		N < 0 return all pairs
 	"""
 	previous_QA_chan = []
 	for sub_arr in previous_QA:
 		if sub_arr[0].lower() == channel.lower():
 			previous_QA_chan.append(sub_arr)
-	if (N < 1):
+	if (N < 0):
 		return previous_QA_chan
+	elif (N == 0):
+		return []
 	else:
 		return previous_QA_chan[-N:]
+
+def leaveInChannelHistory(previous_QA, channel, N):
+	"""
+	Leave last-N Q/A pairs in channel history
+		N > 0 leave N pairs
+		N = 0 leave no pairs (remove all)
+		N < 0 leave all pairs (remove none)
+	"""
+	previous_QA_chan = getChannelHistory(previous_QA, channel, -1)
+	cnt = len(previous_QA_chan)
+	todelete = []
+	if (N < 0):
+		""" do nothing """
+	elif (N == 0):
+		todelete = previous_QA_chan
+	else:
+		if (N < cnt):
+			todelete = previous_QA_chan[0:(cnt-N)]
+	for sub_arr in todelete:
+		previous_QA.remove(sub_arr)
 
 def prepMessages(previous_QA, channel, history, question):
 	"""
@@ -326,8 +365,8 @@ try:
 	frequency_penalty = config.getint('AI', 'frequency_penalty')
 	presence_penalty = config.getint('AI', 'presence_penalty')
 	request_timeout = config.getint('AI', 'request_timeout')
-	context = config.get('AI', 'context')
-	history = config.getint('AI', 'history')
+	CONTEXT = config.get('AI', 'context', fallback="You are helpful and friendly assistant.")
+	HISTORY = config.getint('AI', 'history', fallback=0)
 
 	# Set up IRC connection settings
 	servers = "".join(config.get('IRC', 'servers').split()).split(',')
@@ -380,12 +419,13 @@ while True:
 			#join permanent channels (from config)
 			ircJoinChannels(irc, channels)
 			#display connection details
-			if isIrcConnected(irc, srv[0], srv[1], srv[2], srv[3], ident, realname, nickname, channels, 0):
-				"""
-				"""
-			else:
-				"""
-				"""
+#			if isIrcConnected(irc, srv[0], srv[1], srv[2], srv[3], ident, realname, nickname, channels, 0):
+#				"""
+#				"""
+#			else:
+#				"""
+#				"""
+			ircConnectionDetails(irc, srv[0], srv[1], srv[2], srv[3], ident, realname, nickname, channels)
 			print("---\n")
 
 	if len(ircmsg) > 0:
@@ -465,16 +505,19 @@ while True:
 				to = chunk[3][1:]
 				""" respond if channel starts with # and if message is addressed to me """
 				if (channel.startswith("#")) and ((to.lower()) == (nickname.lower() + ":")):
+					""" set the history """
+					leaveInChannelHistory(previous_QA, channel, HISTORY)
 					""" prepare assistant's profile with current time included """
-					profile = str(timeInUtc()) + " " + context
+#					profile = timeInUtc() + " " + CONTEXT
+					profile = timeInUtc() + " " + CONTEXT + " When responding, address person using their nickname, which is " + who_nick
 					""" pull out the question """
 					question = ircmsg[len(chunk0to3):].strip()
 					""" display question on console (CHANNEL : WHO_FULL : QUESTION) """
-					print(channel + " :: " + who_full + " :: " + question)
+					print(channel + " : " + who_full + " : " + question)
 					""" process message in accordance with selected AI_MODEL """
 					if (AI_MODEL in chatcompletion_models):
 						""" OpenAI """
-						messages = [{ "role": "system", "content": profile }] + prepMessages(previous_QA, channel, history, question)
+						messages = [{ "role": "system", "content": profile }] + prepMessages(previous_QA, channel, HISTORY, question)
 						try:
 							response = ai.chat.completions.create(
 								model=AI_MODEL,
@@ -515,7 +558,7 @@ while True:
 							printError(str(e) + "\n")
 					elif (AI_MODEL in anthropic_models):
 						""" Anthropic """
-						messages = [] + prepMessages(previous_QA, channel, history, question)
+						messages = [] + prepMessages(previous_QA, channel, HISTORY, question)
 						try:
 							response = ai.messages.create(
 								model=AI_MODEL,
