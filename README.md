@@ -3,7 +3,14 @@
   <h1><a href="https://github.com/oiramNet/AI-IRC-Bot/">AI IRC Bot</h1>
 <!-- Labels: -->
   <!-- First row: -->
-    <img src="https://img.shields.io/github/repo-size/oiramNet/AI-IRC-Bot.svg?label=Repo%20size&style=flat-square" height="20">
+    <img src="https://img.shields.io/github/repo-size/oiramNet/AI-IRC-Bot?label=Repo%20size&style=flat-square" height="20">
+    <img src="https://img.shields.io/github/downloads/oiramNet/AI-IRC-Bot/total?label=Downloads&style=flat-square" height="20">
+    <img src="https://img.shields.io/github/license/oiramNet/AI-IRC-Bot?label=License&style=flat-square" height="20">
+		<br>
+  <!-- Second row: -->
+    <img src="https://img.shields.io/github/issues/oiramNet/AI-IRC-Bot/enhancement?label=Enhancements&style=flat-square" height="20">
+    <img src="https://img.shields.io/github/issues/oiramNet/AI-IRC-Bot/bug?label=Bugs&style=flat-square" height="20">
+    <img src="https://img.shields.io/github/discussions/oiramNet/AI-IRC-Bot?label=Discussions&style=flat-square" height="20">
 <!-- Short description: -->
 </div>
 
