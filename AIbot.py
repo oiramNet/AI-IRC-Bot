@@ -318,7 +318,7 @@ def prepMessages(previous_QA, channel, history, question):
 	previous_QA_chan = getChannelHistory(previous_QA, channel, history)
 	#change into list of AI-readable messages (user/assistant pairs)
 	messages = []
-	for c, t, q, a in previous_QA_chan[:]:
+	for c, t, n, q, a in previous_QA_chan[:]:
 		messages.append({"role": "user", "content": q})
 		messages.append({"role": "assistant", "content": a})
 	#append current question
@@ -400,7 +400,7 @@ server_id = 0
 server_id_max = len(SERVERS)-1
 irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 """
-ELEMENT FORMAT: CHANNEL, TIMESTAMP, QUESTION, ANSWER
+ELEMENT FORMAT: CHANNEL, TIMESTAMP, NICK, QUESTION, ANSWER
 """
 previous_QA = []
 
@@ -540,7 +540,7 @@ while True:
 								response_format={"type": "text"}
 							)
 							answers = response.choices[0].message.content.strip()
-							previous_QA.append((channel, nowUTC().timestamp(), question, answers))
+							previous_QA.append((channel, nowUTC().timestamp(), who_nick, question, answers))
 							sendMessageToIrcChannel(irc, channel, who_nick, answers)
 						except ai.error.Timeout as e:
 							printError(str(e) + "\n")
@@ -579,7 +579,7 @@ while True:
 								messages=messages,
 							)
 							answers = response.content[0].text.strip()
-							previous_QA.append((channel, nowUTC().timestamp(), question, answers))
+							previous_QA.append((channel, nowUTC().timestamp(), who_nick, question, answers))
 							sendMessageToIrcChannel(irc, channel, who_nick, answers)
 						except ai.APIConnectionError as e:
 							printError("The server could not be reached." + str(e) + "\n")
