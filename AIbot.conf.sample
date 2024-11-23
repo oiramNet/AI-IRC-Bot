@@ -26,8 +26,8 @@ history = 0
 # use_nick
 # 	Purpose:	While responding, address user with their nick.
 # 	Validity:	Claude/ChatCompletion, ChatGPT/ChatCompletion
-# 	Default:	true
-use_nick = true
+# 	Default:	false
+use_nick = false
 
 # temperature
 #	Purpose:	Defines how random each subsequent word in the chat output is.
@@ -73,18 +73,6 @@ request_timeout = 60
 #	Default:	false
 debug = false
 
-# servers
-#	Purpose:	List of servers, separated with comma (,), each server defined as HOST:PORT:SSL:[PASSWORD]
-#	Validity:	N/A
-#	Default:	N/A
-servers = tngnet.ircnet.io:6679:true:,irc.nlnog.net:6667:false:
-
-# channels
-#	Purpose:	List of permanent channels, separated with comma (,). Supported only standard channels (#NAME).
-#	Validity:	N/A
-#	Default:	N/A
-channels = #oiram
-
 # accept_invites
 #	Purpose:	Accept invitation to join non-permanent channel.
 #	Validity:	N/A
@@ -97,20 +85,49 @@ accept_invites = false
 #	Default:	false
 rejoin_invited = false
 
-# nickname
-#	Purpose:	Nickname of the bot.
-#	Validity:	N/A
-#	Default:	N/A
-nickname = SampleBot
+# server
+#	Purpose:	Table of servers.
+#					name - name or IP address of the server
+#					port - port of the server (default: 6667)
+#					tls - use SSL/TLS (default: false)
+#					password - user's password (default: BLANK)
+#					ident - user's ident
+#					realname - user's real name (default: BLANK)
+#					nickname - user's nick name
+#					sasl_mechanism - only PLAIN supported (default: PLAIN) (***WIP***)
+#					sasl_username - SASL username (default: BLANK) (***WIP***)
+#					sasl_password - SASL password (default: BLANK) (***WIP***)
+server[0].name = tngnet.ircnet.io
+server[0].port = 6679
+server[0].tls = true
+server[0].password = 
+server[0].ident = SampleBot
+server[0].realname = Sample Bot
+server[0].nickname = SampleBot
+server[0].sasl_mechanism = 
+server[0].sasl_username = 
+server[0].sasl_password = 
+#
+server[1].name = irc.nlnog.net
+server[1].port = 6667
+server[1].tls = false
+server[1].password = 
+server[1].ident = SampleBot
+server[1].realname = Sample Bot
+server[1].nickname = SampleBot
+server[1].sasl_mechanism = PLAIN
+server[1].sasl_username = user
+server[1].sasl_password = password
 
-# ident
-#	Purpose:	The ident of the bot.
-#	Validity:	N/A
-#	Default:	N/A
-ident = SampleBot
-
-# realname
-#	Purpose:	Real name of the bot.
-#	Validity:	N/A
-#	Default:	N/A
-realname = Sample Bot
+# channel[]
+#	Purpose:	Table of permanent channels.
+#					name -  channel name, supported only standard (#NAME) channels (default: BLANK)
+#					context - behavior of the bot (default: GLOBAL context)
+#					history - number of question/answer pairs to keep in history (default: GLOBAL history)
+#					use_nick - while responding, address user with their nick (default: GLOBAL use_nick)
+channel[0].name = #oiram
+channel[0].context = You understand many languages, but you only reply in Polish.
+channel[0].history = 10
+channel[0].use_nick = true
+#
+channel[1].name = #oiram1

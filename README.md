@@ -21,10 +21,10 @@ __AI IRC Bot__ is a simple IRC bot written in Python. It was initially forked fr
 * Claude (Anthropic): https://docs.anthropic.com/en/api/getting-started
 
 ## Prerequisites
-1. Create an account and obtain your API key
+1. Create an account and obtain your __API KEY__
    * ChatGPT (OpenAI): https://platform.openai.com/account/api-keys
    * Claude (Anthropic): https://console.anthropic.com/settings/keys
-2. Install Python3 and the official Python bindings (__pyshorteners__; __pytz__; __openai__; __anthropic__)
+2. Install Python3 and the official bindings (__pyshorteners__; __pytz__; __openai__; __anthropic__)
    * Debian/Ubuntu
      ```
      apt install python3 python3-pip
@@ -69,7 +69,7 @@ __AI IRC Bot__ can use any of the below models.
 We suggest starting experimenting with __gpt-4o-mini__ for the ChatGPT (OpenAI) or __claude-3-5-haiku-latest__ for Claude (Anthropic).
 
 ## Running bot
-To start the bot, you can run the command below. Make sure to replace __CONFIG__ with the name of your configuration file.
+To start the bot, run the command below. Make sure to replace __CONFIG__ with the name of your configuration file.
 * Debian/Ubuntu/RedHat/CentOS
   ```
   python3 AIbot.py CONFIG
@@ -79,29 +79,9 @@ To start the bot, you can run the command below. Make sure to replace __CONFIG__
   python3.11 AIbot.py CONFIG
   ```
 
-You can also use the __screen__ command to run it in the background and keep it running even after you log out of your session.
-* Debian/Ubuntu/RedHat/CentOS
-  ```
-  screen python3 AIbot.py CONFIG
-  ```
-* FreeBSD
-  ```
-  screen python3.11 AIbot.py CONFIG
-  ```
-
-To detach from the __screen__ session (leaving your __AI IRC Bot__ running in the background), press __Ctrl + A__ followed by __d__ (for "detach").
-If you need to reattach to the screen session later, use the following command:
-```
-screen -R
-```
-And if you are not sure if you have detached it previously, use the following command:
-```
-screen -dR
-```
-
 ## Interaction
-__AI IRC Bot__ is designed to process messages on standard channels (#CHANNEL) and will interact (respond) only to messages directed to it using its nickname (BOTNAME: MESSAGE).
-```
+__AI IRC Bot__ is designed to process messages on standard channels (__#CHANNEL__) and will interact (respond) only to messages directed to it using its nickname (__BOTNAME: MESSAGE__).
+```console
 12:34:12 < user> SampleBot: how are you?
 12:34:13 < SampleBot> I'm doing well, thank you for asking! How are you today? Is there anything specific I can help you with?
 12:56:21 < user> SampleBot: do you like IRC?
@@ -109,10 +89,10 @@ __AI IRC Bot__ is designed to process messages on standard channels (#CHANNEL) a
 ```
 
 If you set the model to __dall-e-2__ or __dall-e-3__ (ChatGPT/Image creation), the __AI IRC Bot__ will return a shortened URL to the generated image.
-```
+```console
 13:14:05 < user> SampleBot: red apples on the table
 13:14:35 < SampleBot> https://tinyurl.com/1a2b3c4d
 ```
 
-## Issues
-Feel free to report any issues through the __GitHub__.
+## Bugs, Enhancments, etc.
+Feel free to contact us through the __GitHub__.
