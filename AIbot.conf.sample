@@ -1,66 +1,84 @@
+#
+# AI IRC Bot
+# version: 20241125 (and later)
+#
+# Sample configuration file
+#
+
 [AI]
 # model
-#	Purpose:	Model to be used.
+#	Purpose:	AI model to be used.
+#	Mandatory:	Yes
 #	Validity:	N/A
 #	Default:	N/A
 model = gpt-4o-mini
 
 # api_key
-#	Purpose:	API Key
+#	Purpose:	AI API KEY
+#	Mandatory:	Yes
 #	Validity:	any model
 #	Default:	N/A
 api_key = sk-...
 
 # context
-#	Purpose:	Describe behavior of the bot.
+#	Purpose:	Describe behavior of the bot (e.g. provide instruction how to respond to questions).
+#	Mandatory:	No
 #	Validity:	Claude/ChatCompletion, ChatGPT/ChatCompletion
 #	Default:	You are helpful and friendly assistant.
 context = You are helpful and friendly assistant.
 
 # history
 #	Purpose:	Set number of previous questions/answers to be kept.
+#	Mandatory:	No
 #	Validity:	Claude/ChatCompletion, ChatGPT/ChatCompletion
 #	Default:	0
 history = 0
 
 # use_nick
 # 	Purpose:	While responding, address user with their nick.
+#	Mandatory:	No
 # 	Validity:	Claude/ChatCompletion, ChatGPT/ChatCompletion
 # 	Default:	false
 use_nick = false
 
 # temperature
 #	Purpose:	Defines how random each subsequent word in the chat output is.
+#	Mandatory:	No
 #	Validity:	Claude/ChatCompletion, ChatGPT/ChatCompletion
 #	Default:	0.5
 temperature = 0.5
 
 # top_p
 #	Purpose:	An alternative to sampling with temperature, where the model considers the results of the tokens with top_p probability mass.
+#	Mandatory:	No
 #	Validity:	Claude/ChatCompletion, ChatGPT/ChatCompletion
 #	Default:	1 (meaning 100%)
 top_p = 1
 
 # max_tokens
 #	Purpose:	The maximum number of tokens to generate in the response.
+#	Mandatory:	No
 #	Validity:	Claude/ChatCompletion, ChatGPT/ChatCompletion
 #	Default:	1000
 max_tokens = 1000
 
 # frequency_penalty
 #	Purpose:	Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
+#	Mandatory:	No
 #	Validity:	ChatGPT/ChatCompletion
 #	Default:	0
 frequency_penalty = 0
 
 # presence_penalty
 #	Purpose:	Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
+#	Mandatory:	No
 #	Validity:	ChatGPT/ChatCompletion
 #	Default:	0
 presence_penalty = 0
 
 # request_timeout
 #	Purpose:	Timeout processing request by API. (OBSOLETE)
+#	Mandatory:	No
 #	Validity:	ChatGPT/ChatCompletion
 #	Default:	60
 request_timeout = 60
@@ -68,19 +86,22 @@ request_timeout = 60
 
 [IRC]
 # debug
-#	Purpose:	Display some limited debugging messages
+#	Purpose:	Display some limited debugging messages.
+#	Mandatory:	No
 #	Validity:	N/A
 #	Default:	false
 debug = false
 
 # accept_invites
-#	Purpose:	Accept invitation to join non-permanent channel.
+#	Purpose:	Accept invitation to join a non-permanent channel.
+#	Mandatory:	No
 #	Validity:	N/A
 #	Default:	false
 accept_invites = false
 
 # rejoin_invited
-#	Purpose:	Allow to re-join non-permanent channel to which bot was invited.
+#	Purpose:	Allow to re-join a non-permanent channel (channel to which bot was previously invited).
+#	Mandatory:	No
 #	Validity:	N/A
 #	Default:	false
 rejoin_invited = false
@@ -97,6 +118,7 @@ rejoin_invited = false
 #					sasl_mechanism - only PLAIN supported (default: PLAIN) (***WIP***)
 #					sasl_username - SASL username (default: BLANK) (***WIP***)
 #					sasl_password - SASL password (default: BLANK) (***WIP***)
+#	Mandatory:	Yes (at least 1 server, with ID:0, for which name, ident and nickname are defined)
 server[0].name = tngnet.ircnet.io
 server[0].port = 6679
 server[0].tls = true
@@ -119,15 +141,20 @@ server[1].sasl_mechanism = PLAIN
 server[1].sasl_username = user
 server[1].sasl_password = password
 
-# channel[]
+# channel
 #	Purpose:	Table of permanent channels.
 #					name -  channel name, supported only standard (#NAME) channels (default: BLANK)
 #					context - behavior of the bot (default: GLOBAL context)
 #					history - number of question/answer pairs to keep in history (default: GLOBAL history)
 #					use_nick - while responding, address user with their nick (default: GLOBAL use_nick)
+#					model - model to be used (default: GLOBAL model)
+#					api_key - API KEY (default: GLOBAL api_key)
+#	Mandatory:	No (bot can be invited to channels)
 channel[0].name = #oiram
 channel[0].context = You understand many languages, but you only reply in Polish.
 channel[0].history = 10
 channel[0].use_nick = true
 #
 channel[1].name = #oiram1
+channel[1].model = claude-3-5-haiku-latest
+channel[1].api_key = sk-ant-...

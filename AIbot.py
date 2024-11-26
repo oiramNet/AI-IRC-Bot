@@ -16,10 +16,12 @@ AI API(s)
 import openai
 import anthropic
 
+VERSION = "20241126"
 
 print("")
 print("+----------------------------------------+")
 print("|               AI IRC Bot               |")
+print("|                " + VERSION + "                |")
 print("|          by Mariusz J. Handke          |")
 print("|      oiram@IRCnet   oiram@IRCnet2      |")
 print("|                                        |")
@@ -31,15 +33,13 @@ print("")
 # DEFINITIONS
 # 
 
-# Lists of supported AI models
-
+"""
+Lists of supported AI models
+"""
 # ChatGPT (OpenAI)
-#  REF: https://platform.openai.com/docs/models
 chatcompletion_models = ["gpt-4o", "gpt-4o-mini", "gpt-4", "gpt-4-turbo", "gpt-4-turbo-preview", "gpt-3.5-turbo"]
 images_models = ["dall-e-2", "dall-e-3"]
-
 # Claude(Anthropic)
-#  REF: https://docs.anthropic.com/en/docs/about-claude/models
 anthropic_models = ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"]
 
 # other global settings
@@ -125,12 +125,9 @@ def netConnect(server, port, ssl):
 	"""
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	try:
-		sock.connect((server, int(port)))
+		sock.connect((server, port))
 	except:
 		""" add exception handling """
-#	print("XXX")
-#	print("sock = ", sock)
-#	print("sock.peer = ", sock.getpeername())
 	if (ssl):
 		sslcontext = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 		sslcontext.check_hostname = False
@@ -172,7 +169,9 @@ def ircSetNick(irc, nick, nickname):
 			"""
 			UNKNOWN RCODE
 			"""
-			printInfo("RCODE = " + str(rcode))
+			#printInfo("ircSetNick nick = " + str(nick))
+			#printInfo("ircSetNick ircmsg = " + str(ircmsg))
+			#printInfo("ircSetNick RCODE = " + str(rcode))
 			rnick = nick
 	return rnick
 
@@ -180,7 +179,6 @@ def ircJoinChannels(irc, channels):
 	"""
 	Join channels
 	"""
-#	irc.send(bytes("JOIN " + ",".join(channels) + "\n", "UTF-8"))
 	irc.send(bytes("JOIN " + channels + "\n", "UTF-8"))
 #	ircmsg = ""
 #	while ircmsg.find("End of /NAMES list.") == -1:
@@ -242,7 +240,7 @@ def ircConnect(server, port, ssl, password, ident, realname, wait):
 						"""
 						UNKNOWN RCODE
 						"""
-						printInfo("RCODE = " + str(rcode))
+						printInfo("ircConnect RCODE = " + str(rcode))
 			except:
 				printError("Connection to " + server + " failed - getData()")
 				connected = False
@@ -354,6 +352,37 @@ def prepMessages(previous_QA, channel, history, question):
 	messages.append({"role": "user", "content": question})
 	return messages
 
+def getCfgOptionStr(config, section, name, default):
+	try:
+		option = config.get(section, name)
+		if (len(option) == 0):
+			option = default
+	except:
+		option = default
+	return option
+
+def getCfgOptionInt(config, section, name, default):
+	try:
+		option = config.getint(section, name)
+	except:
+		option = default
+	return option
+
+def getCfgOptionFloat(config, section, name, default):
+	try:
+		option = config.getfloat(section, name)
+	except:
+		option = default
+	return option
+
+def getCfgOptionBoolean(config, section, name, default):
+	try:
+		option = config.getboolean(section, name)
+	except:
+		option = default
+	return option
+
+
 
 """
 CONFIGURATION
@@ -376,48 +405,41 @@ if len(sys.argv)>1:
 		printError("Specified configuration file (" + conf_file + ") does not exist.\n")
 		exit(1)
 else:
-	printError("Missing configuration file name.\n\nUSAGE: " + sys.argv[0] + " conf_file\n")
+	printError("Missing configuration file name.\n\nUSAGE: " + sys.argv[0] + " CONF_FILE\n")
 	exit(1)
 
 try:
+
 	# Set up AI model
 	AI_MODEL = config.get('AI', 'model')
 	# Set up API KEY
 	AI_API_KEY = config.get('AI', 'api_key')
 	# Create AI object based on AI_MODEL and assign AI_API_KEY
 	if (AI_MODEL in chatcompletion_models) | (AI_MODEL in images_models):
-		ai_type = "ChatGPT (OpenAI)"
-		ai = openai.OpenAI(api_key=AI_API_KEY)
+		AI = openai.OpenAI(api_key=AI_API_KEY)
 	elif (AI_MODEL in anthropic_models):
-		ai_type = "Claude (Anthropic)"
-		ai = anthropic.Anthropic(api_key=AI_API_KEY)
+		AI = anthropic.Anthropic(api_key=AI_API_KEY)
 	else:
-		printError("Invalid AI model selected.\n")
+		printError("Unsupported AI model selected (GLOBAL).\n")
 		exit(1)
-	ai_type = ai_type + " and model " + AI_MODEL
 
 	#set GLOBAL variables
-	CONTEXT = config.get('AI', 'context', fallback="You are helpful and friendly assistant.")
-	HISTORY = config.getint('AI', 'history', fallback=0)
-	USE_NICK = config.getboolean('AI', 'use_nick', fallback=False)
+	CONTEXT = getCfgOptionStr(config, "AI", "context", "You are helpful and friendly assistant.")
+	HISTORY = getCfgOptionInt(config, "AI", "history", 0)
+	USE_NICK = getCfgOptionBoolean(config, "AI", "use_nick", False)
 
 	# Set up AI parameters
-	TEMPERATURE = config.getfloat('AI', 'temperature', fallback=0.5)
-	TOP_P = config.getint('AI', 'top_p', fallback=1)
-	MAX_TOKENS = config.getint('AI', 'max_tokens', fallback=1000)
-	FREQUENCY_PENALTY = config.getint('AI', 'frequency_penalty', fallback=0)
-	PRESENCE_PENALTY = config.getint('AI', 'presence_penalty', fallback=0)
-	REQUEST_TIMEOUT = config.getint('AI', 'request_timeout', fallback=60)
+	TEMPERATURE = getCfgOptionFloat(config, "AI", "temperature", 0.5)
+	TOP_P = getCfgOptionInt(config, "AI", "top_p", 1)
+	MAX_TOKENS = getCfgOptionInt(config, "AI", "max_tokens", 1000)
+	FREQUENCY_PENALTY = getCfgOptionInt(config, "AI", "frequency_penalty", 0)
+	PRESENCE_PENALTY = getCfgOptionInt(config, "AI", "presence_penalty", 0)
+	REQUEST_TIMEOUT = getCfgOptionInt(config, "AI", "request_timeout", 60)
 
 	# Set up global IRC settings
-	DEBUG = config.getboolean('IRC', 'debug', fallback=False)
-	ACCEPT_INVITES = config.getboolean('IRC', 'accept_invites', fallback=False)
-	REJOIN_INVITED = config.getboolean('IRC', 'rejoin_invited', fallback=False)
-	""" DEPRECATED """
-	#IDENT = config.get('IRC', 'ident')
-	#REALNAME = config.get('IRC', 'realname')
-	#NICK = config.get('IRC', 'nickname')[:9]
-	#CHANNELS = "".join(config.get('IRC', 'channels').split()).split(',')
+	DEBUG = getCfgOptionBoolean(config, "IRC", "debug", False)
+	ACCEPT_INVITES = getCfgOptionBoolean(config, "IRC", "accept_invites", False)
+	REJOIN_INVITED = getCfgOptionBoolean(config, "IRC", "rejoin_invited", False)
 
 	"""
 	Load servers settings
@@ -427,25 +449,30 @@ try:
 	SERVER = []
 	while True:
 		try:
-			SERVER.append((
-				config.get("IRC", "server[" + str(i) + "].name"),
-				config.get("IRC", "server[" + str(i) + "].port", fallback="6667"),
-				config.getboolean("IRC", "server[" + str(i) + "].tls", fallback=False),
-				config.get("IRC", "server[" + str(i) + "].password", fallback=""),
-				config.get("IRC", "server[" + str(i) + "].ident"),
-				config.get("IRC", "server[" + str(i) + "].realname", fallback=""),
-				config.get("IRC", "server[" + str(i) + "].nickname")[:9],
-				config.get("IRC", "server[" + str(i) + "].sasl_mechanism", fallback="PLAIN"),
-				config.get("IRC", "server[" + str(i) + "].sasl_username", fallback=""),
-				config.get("IRC", "server[" + str(i) + "].sasl_password", fallback=""),
-			))
+			ist = str(i)
+			s = getCfgOptionStr(config, "IRC", "server[" + ist + "].name", "")
+			p = getCfgOptionInt(config, "IRC", "server[" + ist + "].port", 6667)
+			tls = getCfgOptionBoolean(config, "IRC", "server[" + ist + "].tls", False)
+			pw = getCfgOptionStr(config, "IRC", "server[" + ist + "].password", "")
+			id = getCfgOptionStr(config, "IRC", "server[" + ist + "].ident", "")
+			rn = getCfgOptionStr(config, "IRC", "server[" + ist + "].realname", "")
+			n = getCfgOptionStr(config, "IRC", "server[" + ist + "].nickname", "")[:9]
+			saslm = getCfgOptionStr(config, "IRC", "server[" + ist + "].sasl_mechanism", "PLAIN")
+			saslu = getCfgOptionStr(config, "IRC", "server[" + ist + "].sasl_username", "")
+			saslp = getCfgOptionStr(config, "IRC", "server[" + ist + "].sasl_password", "")
+			if ((len(s) == 0) | (len(id) == 0) | (len(n) == 0)):
+				break
+			SERVER.append([s, p, tls, pw, id, rn, n, saslm, saslu, saslp])
 			i += 1
 		except:
 			break
+	if (len(SERVER) == 0):
+		printError("Invalid server[" + ist + "] settings.")
+		exit(1)
 
 	"""
 	Load channels settings
-		ELEMENT FORMAT: NAME, CONTEXT, HISTORY, USE_NICK
+		ELEMENT FORMAT: NAME, CONTEXT, HISTORY, USE_NICK, MODEL, API_KEY, AI(var)
 	"""
 	i = 0
 	CHANNEL = []
@@ -453,23 +480,39 @@ try:
 	while True:
 		c = ""
 		try:
-			c = config.get("IRC", "channel[" + str(i) + "].name")
-			try:
-				cx = config.get("IRC", "channel[" + str(i) + "].context")
-				if (len(cx) == 0):
-					cx = CONTEXT
-			except:
-				cx = CONTEXT
-			try:
-				h = config.getint("IRC", "channel[" + str(i) + "].history")
-			except:
-				h = HISTORY
-			try:
-				u = config.getboolean("IRC", "channel[" + str(i) + "].use_nick")
-			except:
-				u = USE_NICK
+			ist = str(i)
+			c = getCfgOptionStr(config, "IRC", "channel[" + ist + "].name", "")
+			if (len(c) == 0):
+				break
+			cx = getCfgOptionStr(config, "IRC", "channel[" + ist + "].context", CONTEXT)
+			h = getCfgOptionInt(config, "IRC", "channel[" + ist + "].history", HISTORY)
+			u = getCfgOptionBoolean(config, "IRC", "channel[" + ist + "].use_nick", USE_NICK)
+			m = getCfgOptionStr(config, "IRC", "channel[" + ist + "].model", AI_MODEL)
+			ak = getCfgOptionStr(config, "IRC", "channel[" + ist + "].api_key", AI_API_KEY)
+#			try:
+#				m = config.get("IRC", "channel[" + ist + "].model")
+#				if (len(m) == 0):
+#					m = AI_MODEL
+#					ak = AI_API_KEY
+#				else:
+#					try:
+#						ak = config.get("IRC", "channel[" + ist + "].api_key")
+#						if (len(ak) == 0):
+#							ak = AI_API_KEY
+#					except:
+#						ak = AI_API_KEY
+#			except:
+#				m = AI_MODEL
+#				ak = AI_API_KEY
+			if (m in chatcompletion_models) | (m in images_models):
+				ai = openai.OpenAI(api_key=ak)
+			elif (m in anthropic_models):
+				ai = anthropic.Anthropic(api_key=ak)
+			else:
+				printError("Unsupported AI model selected (channel: " + c + ").\n")
+				exit(1)
 			if (getChannelIndex(c, CHANNEL) < 0):
-				CHANNEL.append((c, cx, h, u))
+				CHANNEL.append([c, cx, h, u, m, ak, ai])
 				CHANNELS += c + ","
 			i += 1
 		except:
@@ -486,7 +529,6 @@ except Exception as e:
 # EXECUTION
 #
 
-printInfo("This bot is configured to use " + ai_type)
 server_id_max = len(SERVER)-1
 server_id = server_id_max
 irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -604,24 +646,27 @@ while True:
 				"""
 				Processing channel message
 				"""
-				chunk0to3 = chunk[0] + " " + chunk[1] + " " + chunk[2] + " " + chunk[3] + " "
-				""" pull channel settings or use GLOBAL defaults for channel bot was invited to """
+				""" get current channel name """
 				channel = chunk[2].replace(":", "")
-				channel_id = getChannelIndex(chunk[2].replace(":", ""), CHANNEL)
-				if (channel_id >= 0):
-					""" permanent channel """
-					CHAN = CHANNEL[channel_id]
-				else:
-					""" non permanent channel """
-					CHAN = [channel, CONTEXT, HISTORY, USE_NICK]
 				""" to whom message is addressed """
-				to = chunk[3][1:]
+				to = chunk[3][1:]	# INVESTIGATE correctness of this approach
+				""" """
+				chunk0to3 = chunk[0] + " " + chunk[1] + " " + chunk[2] + " " + chunk[3] + " "
 				""" respond if channel starts with # and if message is addressed to me """
-				if (CHAN[0].startswith("#")) and ((to.lower()) == (nickname.lower() + ":")):
+				if (channel.startswith("#")) and ((to.lower()) == (nickname.lower() + ":")):
+					""" check if channel is present in CHANNEL """
+					channel_id = getChannelIndex(channel, CHANNEL)
+					""" add channel using GLOBAL defaults for channel bot was invited to"""
+					if (channel_id < 0):
+						CHANNEL.append([channel, CONTEXT, HISTORY, USE_NICK, AI_MODEL, AI_API_KEY, AI])
+						channel_id = getChannelIndex(channel, CHANNEL)
+					""" pull channel settings """
+					CHAN = CHANNEL[channel_id]
 					""" set the Q/A history """
 					leaveInChannelHistory(previous_QA, CHAN[0], CHAN[2])
 					""" prepare assistant's profile (instructions) with current time included """
 					profile = todayIsUTC() + " " + CHAN[1]
+					""" if use_nik is set """
 					if (CHAN[3]):
 						profile += " When responding, address the person using their nickname. This question was asked by a person who's nickname is " + who_nick + "."
 					""" pull out the question """
@@ -629,12 +674,12 @@ while True:
 					""" display question on console (CHANNEL : WHO_FULL : QUESTION) """
 					print(CHAN[0] + " : " + who_full + " : " + question)
 					""" process message in accordance with selected AI_MODEL """
-					if (AI_MODEL in chatcompletion_models):
+					if (CHAN[4] in chatcompletion_models):
 						""" OpenAI """
 						messages = [{ "role": "system", "content": profile }] + prepMessages(previous_QA, CHAN[0], CHAN[2], question)
 						try:
-							response = ai.chat.completions.create(
-								model=AI_MODEL,
+							response = CHAN[6].chat.completions.create(
+								model=CHAN[4],
 								max_tokens=MAX_TOKENS,
 								temperature=TEMPERATURE,
 								messages=messages,
@@ -643,7 +688,7 @@ while True:
 								response_format={"type": "text"}
 							)
 							answers = response.choices[0].message.content.strip()
-							previous_QA.append((CHAN[0], nowUTC().timestamp(), who_nick, question, answers))
+							previous_QA.append([CHAN[0], nowUTC().timestamp(), who_nick, question, answers])
 							sendMessageToIrcChannel(irc, CHAN[0], who_nick, answers)
 						except ai.error.Timeout as e:
 							printError(str(e) + "\n")
@@ -651,11 +696,11 @@ while True:
 							printError(str(e) + "\n")
 						except Exception as e:
 							printError(str(e) + "\n")
-					elif (AI_MODEL in images_models):
+					elif (CHAN[4] in images_models):
 						""" OpenAI """
 						try:
-							response = ai.Image.create(
-								model=AI_MODEL,
+							response = CHAN[6].Image.create(
+								model=CHAN[4],
 								prompt=question,
 								n=1,
 								size="1024x1024"
@@ -670,19 +715,19 @@ while True:
 							printError(str(e) + "\n")
 						except Exception as e:
 							printError(str(e) + "\n")
-					elif (AI_MODEL in anthropic_models):
+					elif (CHAN[4] in anthropic_models):
 						""" Anthropic """
 						messages = [] + prepMessages(previous_QA, CHAN[0], CHAN[2], question)
 						try:
-							response = ai.messages.create(
-								model=AI_MODEL,
+							response = CHAN[6].messages.create(
+								model=CHAN[4],
 								max_tokens=MAX_TOKENS,
 								temperature=TEMPERATURE,
 								system=profile,
 								messages=messages,
 							)
 							answers = response.content[0].text.strip()
-							previous_QA.append((CHAN[0], nowUTC().timestamp(), who_nick, question, answers))
+							previous_QA.append([CHAN[0], nowUTC().timestamp(), who_nick, question, answers])
 							sendMessageToIrcChannel(irc, CHAN[0], who_nick, answers)
 						except ai.APIConnectionError as e:
 							printError("The server could not be reached." + str(e) + "\n")
