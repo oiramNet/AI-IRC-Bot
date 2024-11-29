@@ -16,7 +16,7 @@ AI API(s)
 import openai
 import anthropic
 
-VERSION = "20241129"
+VERSION = "20241130"
 
 print("")
 print("+----------------------------------------+")
@@ -136,9 +136,9 @@ def nextServer(id, idmax):
 	else:
 		return id + 1
 
-def netConnect(server, port, ssl):
+def netConnect(server, port, tls):
 	"""
-	PURPOSE:	Return socket connected to the remote server on specified port, and use SSL/TLS if specified
+	PURPOSE:	Return socket connected to the remote server on specified port, and use TLS if specified
 	VERIFIED:	YES
 	"""
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -146,7 +146,7 @@ def netConnect(server, port, ssl):
 		sock.connect((server, port))
 	except:
 		""" add exception handling """
-	if (ssl):
+	if (tls):
 		sslcontext = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 		sslcontext.check_hostname = False
 		sslcontext.verify_mode = ssl.CERT_NONE
@@ -204,7 +204,7 @@ def ircJoinChannels(irc, channels):
 #		ircmsg = getData(irc)
 #		print("ircmsg = ", ircmsg)
 
-def ircConnect(server, port, ssl, password, ident, realname, wait):
+def ircConnect(server, port, tls, password, ident, realname, wait):
 	"""
 	Connect to IRC server using RANDOM nick
 	"""
@@ -212,9 +212,9 @@ def ircConnect(server, port, ssl, password, ident, realname, wait):
 	""" generate 9 characters random nick (AIbot####) """
 	nickname = ("AIbot" + srand(4))[:9]
 	connected = True
-	printInfo("Connecting to " + str(server) + ":" + str(port) + " (SSL/TLS: " + str(ssl) + ")")
+	printInfo("Connecting to " + str(server) + ":" + str(port) + " (TLS: " + str(tls) + ")")
 	try:
-		irc = netConnect(server, port, ssl)
+		irc = netConnect(server, port, tls)
 		try:
 			ircAuth(irc, password, ident, realname, nickname)
 			try:
@@ -275,7 +275,7 @@ def ircConnect(server, port, ssl, password, ident, realname, wait):
 
 	return connected, irc, nickname
 
-def ircConnectionDetails(irc, server, port, ssl, password, ident, realname, nickname, channels):
+def ircConnectionDetails(irc, server, port, tls, password, ident, realname, nickname, channels):
 	"""
 	PURPOSE:	Display IRC connection details
 	VERIFIED:	YES
@@ -463,7 +463,7 @@ def getFromModel(what, model, MODEL):
 			match what:
 				case "api":
 					return element[0].lower()
-				case "type"
+				case "type":
 					return element[2].lower()
 				case _:
 					return ""
@@ -574,7 +574,7 @@ try:
 			id = getCfgOptionStr(config, "IRC", "server[" + ist + "].ident", "")
 			rn = getCfgOptionStr(config, "IRC", "server[" + ist + "].realname", "")
 			n = getCfgOptionStr(config, "IRC", "server[" + ist + "].nickname", "")[:9]
-			saslm = getCfgOptionStr(config, "IRC", "server[" + ist + "].sasl_mechanism", "PLAIN")
+			saslm = getCfgOptionStr(config, "IRC", "server[" + ist + "].sasl_mechanism", "")
 			saslu = getCfgOptionStr(config, "IRC", "server[" + ist + "].sasl_username", "")
 			saslp = getCfgOptionStr(config, "IRC", "server[" + ist + "].sasl_password", "")
 			if ((len(s) == 0) | (len(id) == 0) | (len(n) == 0)):
@@ -610,9 +610,15 @@ try:
 			api = getApiFromModel(m, MODEL)
 			match (api):
 				case "anthropic":
-					ai = anthropic.Anthropic(api_key=ak)
+					try:
+						ai = anthropic.Anthropic(api_key=ak)
+					except:
+						""" add handling """
 				case "openai":
-					ai = openai.OpenAI(api_key=ak)
+					try:
+						ai = openai.OpenAI(api_key=ak)
+					except:
+						""" add handling """
 				case _:
 					printError("Unsupported AI model selected (channel: " + c + ").\n")
 					exit(1)
