@@ -1,6 +1,6 @@
 #
 # AI IRC Bot
-# version: 20241125 (and later)
+# version: 20241129 (and later)
 #
 # Sample configuration file
 #
@@ -27,11 +27,18 @@ api_key = sk-...
 #	Default:	You are helpful and friendly assistant.
 context = You are helpful and friendly assistant.
 
-# history
-#	Purpose:	Set number of previous questions/answers to be kept.
+# history_time
+#	Purpose:	Set history time (in seconds) of question/answer pairs to be kept.
 #	Mandatory:	No
 #	Validity:	Claude/ChatCompletion, ChatGPT/ChatCompletion
-#	Default:	0
+#	Default:	-1 (use only history setting)
+history_time = -1
+
+# history
+#	Purpose:	Set number of previous questions/answers to be kept within specified time (history_time).
+#	Mandatory:	No
+#	Validity:	Claude/ChatCompletion, ChatGPT/ChatCompletion
+#	Default:	0 (none)
 history = 0
 
 # use_nick
@@ -119,6 +126,18 @@ rejoin_invited = false
 #					sasl_username - SASL username (default: BLANK) (***WIP***)
 #					sasl_password - SASL password (default: BLANK) (***WIP***)
 #	Mandatory:	Yes (at least 1 server, with ID:0, for which name, ident and nickname are defined)
+#
+#server[0].name = 
+#server[0].port = 
+#server[0].tls = 
+#server[0].password = 
+#server[0].ident = 
+#server[0].realname = 
+#server[0].nickname = 
+#server[0].sasl_mechanism = 
+#server[0].sasl_username = 
+#server[0].sasl_password = 
+#
 server[0].name = tngnet.ircnet.io
 server[0].port = 6679
 server[0].tls = true
@@ -145,13 +164,24 @@ server[1].sasl_password = password
 #	Purpose:	Table of permanent channels.
 #					name -  channel name, supported only standard (#NAME) channels (default: BLANK)
 #					context - behavior of the bot (default: GLOBAL context)
-#					history - number of question/answer pairs to keep in history (default: GLOBAL history)
+#					history_time - time (in seconds) of question/answer pairs to be kept (default: GLOBAL history_time)
+#					history - number of question/answer pairs to be kept (default: GLOBAL history)
 #					use_nick - while responding, address user with their nick (default: GLOBAL use_nick)
 #					model - model to be used (default: GLOBAL model)
 #					api_key - API KEY (default: GLOBAL api_key)
 #	Mandatory:	No (bot can be invited to channels)
+#
+#channel[0].name = 
+#channel[0].context = 
+#channel[0].history_time = 
+#channel[0].history = 
+#channel[0].use_nick = 
+#channel[0].model = 
+#channel[0].api_key = 
+#
 channel[0].name = #oiram
 channel[0].context = You understand many languages, but you only reply in Polish.
+channel[0].history_time = 3600
 channel[0].history = 10
 channel[0].use_nick = true
 #

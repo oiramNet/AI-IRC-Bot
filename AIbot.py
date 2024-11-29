@@ -16,7 +16,7 @@ AI API(s)
 import openai
 import anthropic
 
-VERSION = "20241126"
+VERSION = "20241129"
 
 print("")
 print("+----------------------------------------+")
@@ -35,50 +35,64 @@ print("")
 
 """
 Lists of supported AI models
+	ELEMENT:	API(VENDOR), NAME, TYPE(CHAT or IMAGE), MODELS
 """
-# ChatGPT (OpenAI)
-chatcompletion_models = ["gpt-4o", "gpt-4o-mini", "gpt-4", "gpt-4-turbo", "gpt-4-turbo-preview", "gpt-3.5-turbo"]
-images_models = ["dall-e-2", "dall-e-3"]
-# Claude(Anthropic)
-anthropic_models = ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"]
+MODEL = [
+["Anthropic",	"Claude",		"CHAT",		"claude-3-5-sonnet-latest"],
+["Anthropic",	"Claude",		"CHAT",		"claude-3-5-haiku-latest"],
+["OpenAI",		"ChatGPT",	"CHAT",		"gpt-4o"],
+["OpenAI",		"ChatGPT",	"CHAT",		"gpt-4o-mini"],
+["OpenAI",		"ChatGPT",	"CHAT",		"gpt-4"],
+["OpenAI",		"ChatGPT",	"CHAT",		"gpt-4-turbo"],
+["OpenAI",		"ChatGPT",	"CHAT",		"gpt-4-turbo-preview"],
+["OpenAI",		"ChatGPT",	"CHAT",		"gpt-3.5-turbo"],
+["OpenAI",		"DALL",			"IMAGE",	"dall-e-2"],
+["OpenAI",		"DALL",			"IMAGE",	"dall-e-3"],
+]
 
 # other global settings
 reconnect = 5
 
 def printDebug(debug, txt):
 	"""
-	Print the text for debugging purposes
+	PURPOSE:	Print the text with DEBUG header
+	VERIFIED:	YES
 	"""
 	if debug:
 		print("DEBUG: " + txt)
 
 def printError(txt):
 	"""
-	Print the error message
+	PURPOSE:	Print the text with ERROR header
+	VERIFIED:	YES
 	"""
 	print("ERROR: " + txt)
 
 def printInfo(txt):
 	"""
-	Print the info message
+	PURPOSE:	Print the text with INFO header
+	VERIFIED:	YES
 	"""
 	print("INFO: " + txt)
 
 def srand(N):
 	"""
-	Generate string of N random characters (uppercase letters, digits)
+	PURPOSE:	Return string of N random characters (uppercase letters and digits only)
+	VERIFIED:	YES
 	"""
 	return "".join(random.choices(string.ascii_uppercase + string.digits, k=N))
 
 def nowUTC():
 	"""
-	Get current date/time in 24-hour format in UTC
+	PURPOSE:	Return current date/time in 24-hour format in UTC
+	VERIFIED:	YES
 	"""
 	return datetime.datetime.now(pytz.timezone('UTC'))
 
 def todayIsUTC():
 	"""
-	Generate string containing current date and time in 24-hour format in UTC 
+	PURPOSE:	Return string containing current date and time in 24-hour format in UTC 
+	VERIFIED:	YES
 	"""
 	dt = nowUTC()
 	now_of_year = dt.strftime("%Y")
@@ -90,11 +104,12 @@ def todayIsUTC():
 	x += "The current time in 24-hour format and UTC time zone is " + now_of_time + ". "
 	return x
 
-def strtobool(val):
+def strtobool(val):	# not used
 	"""
-	Return BOOLEAN value of the input string
-		True: 'y'|'yes'|'t'|'true'|'on'|'1'
-		False: 'n'|'no'|'f'|'false'|'off'|'0'
+	PURPOSE:	Return BOOLEAN value of the input string
+							True: 'y'|'yes'|'t'|'true'|'on'|'1'
+							False: 'n'|'no'|'f'|'false'|'off'|'0'
+	VERIFIED:	YES
 	"""
 	match val.lower().strip():
 		case 'y'|'yes'|'t'|'true'|'on'|'1':
@@ -106,13 +121,15 @@ def strtobool(val):
 
 def getData(sock):
 	"""
-	Pull (read) data (4096 bytes) from SOCKET and decode it as UTF-8
+	PURPOSE:	Return decoded (UTF-8) data (4096 bytes) pulled (read) from socket
+	VERIFIED:	TO DO
 	"""
 	return sock.recv(4096).decode("UTF-8")
 
 def nextServer(id, idmax):
 	"""
-	Return index of next server on the list, or start from beginning
+	PURPOSE:	Return index of the next server on the list or start from beginning (0)
+	VERIFIED:	YES
 	"""
 	if id == idmax:
 		return 0
@@ -121,7 +138,8 @@ def nextServer(id, idmax):
 
 def netConnect(server, port, ssl):
 	"""
-	Connect to the remote server on specified port, if specified, use SSL/TLS, and return SOCKET
+	PURPOSE:	Return socket connected to the remote server on specified port, and use SSL/TLS if specified
+	VERIFIED:	YES
 	"""
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	try:
@@ -137,7 +155,8 @@ def netConnect(server, port, ssl):
 
 def ircAuth(irc, password, ident, realname, nickname):
 	"""
-	Authenticate with IRC server
+	PURPOSE:	Authenticate with IRC server
+	VERIFIED:	YES
 	"""
 	if password:
 		irc.send(bytes("PASS " + password + "\n", "UTF-8"))
@@ -258,7 +277,8 @@ def ircConnect(server, port, ssl, password, ident, realname, wait):
 
 def ircConnectionDetails(irc, server, port, ssl, password, ident, realname, nickname, channels):
 	"""
-	Display IRC connection details
+	PURPOSE:	Display IRC connection details
+	VERIFIED:	YES
 	"""
 	try:
 		irc.getpeername()
@@ -271,11 +291,12 @@ def ircConnectionDetails(irc, server, port, ssl, password, ident, realname, nick
 
 def sendMessageToIrcChannel(irc, channel, reply_to, message):
 	"""
-	Send message to IRC channel
+	PURPOSE:	Send message to IRC channel
+	VERIFIED:	TO DO
 	"""
-	if reply_to != "":
-		irc.send(bytes("PRIVMSG " + channel + " :" + reply_to + ": ...\n", "UTF-8"))
-	msgs = [x.strip() for x in message.split('\n')]
+#	if reply_to != "":
+#		irc.send(bytes("PRIVMSG " + channel + " :" + reply_to + ": ...\n", "UTF-8"))
+	msgs = [x.strip() for x in (reply_to + ": " + message).split('\n')]
 	for msg in msgs:
 		while len(msg) > 0:
 			if len(msg) <= 392:
@@ -290,7 +311,8 @@ def sendMessageToIrcChannel(irc, channel, reply_to, message):
 
 def getChannelIndex(channel, channels):
 	"""
-	Return index of the channel (string) on the channels list, or -1 if not existing
+	PURPOSE:	Return index of the channel (string) within the channels (list), or -1 if not existing
+	VERIFIED:	YES
 	"""
 	i = -1
 	for c in channels:
@@ -299,57 +321,86 @@ def getChannelIndex(channel, channels):
 			break
 	return i
 
-def getChannelHistory(previous_QA, channel, N):
+def getChannelHistoryT(QA, C, T):
 	"""
-	Create list of last-N Q/A pairs for the channel.
-		N > 0 return N pairs
-		N = 0 do not return any pairs
-		N < 0 return all pairs
+	PURPOSE:	Return list of Q/A pairs for the channel (C) based on time (T)
+							T > 0:	within last T seconds
+							T = 0:	return no pairs
+							T < 0:	return all pairs
+	VERIFIED: YES
 	"""
-	previous_QA_chan = []
-	for sub_arr in previous_QA:
-		if sub_arr[0].lower() == channel.lower():
-			previous_QA_chan.append(sub_arr)
+	QA_chan = []
+	if (T < 0):
+		t0 = 0
+	elif (T == 0):
+		t0 = 2 * nowUTC().timestamp()
+	else:
+		t0 = nowUTC().timestamp() - T
+	for element in QA:
+		if (element[0].lower() == C.lower()) and (element[1] >= t0):
+			QA_chan.append(element)
+	return QA_chan
+
+def getChannelHistoryN(QA, C, N):
+	"""
+	PURPOSE:	Return list of Q/A pairs for the channel (C) based on number (N)
+							N > 0: return last N pairs
+							N = 0: return no pairs
+							N < 0: return all pairs
+	VERIFIED: YES
+	"""
+	QA_chan = []
+	for element in QA:
+		if (element[0].lower() == C.lower()):
+			QA_chan.append(element)
 	if (N < 0):
-		return previous_QA_chan
+		return QA_chan
 	elif (N == 0):
 		return []
 	else:
-		return previous_QA_chan[-N:]
+		return QA_chan[-N:]
 
-def leaveInChannelHistory(previous_QA, channel, N):
+def getChannelHistory(QA, C, T, N):
 	"""
-	Leave last-N Q/A pairs in channel history
-		N > 0 leave N pairs
-		N = 0 leave no pairs (remove all)
-		N < 0 leave all pairs (remove none)
+	PURPOSE:	Return list of Q/A pairs for the channel (C) based on time (T) and number (N)
+	VERIFIED:	YES
 	"""
-	previous_QA_chan = getChannelHistory(previous_QA, channel, -1)
-	cnt = len(previous_QA_chan)
-	todelete = []
-	if (N < 0):
-		""" do nothing """
-	elif (N == 0):
-		todelete = previous_QA_chan
-	else:
-		if (N < cnt):
-			todelete = previous_QA_chan[0:(cnt-N)]
-	for sub_arr in todelete:
-		previous_QA.remove(sub_arr)
+	QA_chan = getChannelHistoryT(QA, C, T)
+	QA_chan = getChannelHistoryN(QA_chan, C, N)
+	return QA_chan
 
-def prepMessages(previous_QA, channel, history, question):
+def leaveInChannelHistory(QA, C, T, N):
 	"""
-	Create list of AI-readable messages
+	PURPOSE:	Leave in history Q/A pairs for the channel (C) based on time (T) and number (N)
+	VERIFIED:	YES
+	"""
+	QA_chan = getChannelHistory(QA, C, T, N)
+	delete = []
+	for element in QA:
+		if (element[0].lower() == C.lower()):
+			try:
+				i = QA_chan.index(element)
+			except:
+				delete.append(element)
+		else:
+			""" """
+	for element in delete:
+		QA.remove(element)
+
+def prepMessages(QA, C, T, N, Q):
+	"""
+	PURPOSE:	Create list of AI-readable previous messages for the channel (C) based on time (T) and number (N) and add current question (Q)
+	VERIFIED:	TO DO
 	"""
 	""" get previous Q/A pairs """
-	previous_QA_chan = getChannelHistory(previous_QA, channel, history)
+	QA_chan = getChannelHistory(QA, C, T, N)
 	""" change into list of AI-readable messages (user/assistant pairs) """
 	messages = []
-	for c, t, n, q, a in previous_QA_chan[:]:
+	for c, t, n, q, a in QA_chan[:]:
 		messages.append({"role": "user", "content": q})
 		messages.append({"role": "assistant", "content": a})
 	""" append current question """
-	messages.append({"role": "user", "content": question})
+	messages.append({"role": "user", "content": Q})
 	return messages
 
 def getCfgOptionStr(config, section, name, default):
@@ -382,6 +433,42 @@ def getCfgOptionBoolean(config, section, name, default):
 		option = default
 	return option
 
+def getApiFromModel(model, MODEL):
+	"""
+	PURPOSE:	Return API name of the model
+	VERIFIED:	YES
+	"""
+	for element in MODEL:
+		if (element[3].lower() == model.lower()):
+			return element[0].lower()
+	return ""
+
+def getTypeFromModel(model, MODEL):
+	"""
+	PURPOSE:	Return type name of the model
+	VERIFIED:	YES
+	"""
+	for element in MODEL:
+		if (element[3].lower() == model.lower()):
+			return element[2].lower()
+	return ""
+
+def getFromModel(what, model, MODEL):
+	"""
+	PURPOSE:	Return "what" (api, type) of the model
+	VERIFIED:	TO DO
+	"""
+	for element in MODEL:
+		if (element[3].lower() == model.lower()):
+			match what:
+				case "api":
+					return element[0].lower()
+				case "type"
+					return element[2].lower()
+				case _:
+					return ""
+	return ""
+
 
 
 """
@@ -409,22 +496,52 @@ else:
 	exit(1)
 
 try:
-
 	# Set up AI model
-	AI_MODEL = config.get('AI', 'model')
+	AI_MODEL = config.get('AI', 'model').lower()
 	# Set up API KEY
 	AI_API_KEY = config.get('AI', 'api_key')
-	# Create AI object based on AI_MODEL and assign AI_API_KEY
-	if (AI_MODEL in chatcompletion_models) | (AI_MODEL in images_models):
-		AI = openai.OpenAI(api_key=AI_API_KEY)
-	elif (AI_MODEL in anthropic_models):
-		AI = anthropic.Anthropic(api_key=AI_API_KEY)
-	else:
-		printError("Unsupported AI model selected (GLOBAL).\n")
-		exit(1)
+	# Create list of ALL supported API and models
+	MODELS_API = []
+	MODELS_CHAT = []
+	MODELS_IMAGE = []
+	for element in MODEL:
+		# API
+		a = element[0].lower()
+		try:
+			i = MODELS_API.index(a)
+		except:
+			MODELS_API.append(a)
+		# models
+		m = element[3].lower()
+		match (element[2].lower()):
+			case "chat":
+				MODELS_CHAT.append(m)
+			case "image":
+				MODELS_IMAGE.append(m)
+			case _:
+				""" Unsupported model type """
+	MODELS = MODELS_CHAT + MODELS_IMAGE
+	# Create AI object based on AI_API and assign AI_API_KEY
+	AI_API = getApiFromModel(AI_MODEL, MODEL)
+	match (AI_API):
+		case "anthropic":
+			AI = anthropic.Anthropic(api_key=AI_API_KEY)
+		case "openai":
+			AI = openai.OpenAI(api_key=AI_API_KEY)
+		case _:
+			printError("Unsupported AI model selected (GLOBAL).\n")
+			exit(1)
+	AI_TYPE = getTypeFromModel(AI_MODEL, MODEL)
+	match (AI_TYPE):
+		case "chat" | "image":
+			""" OK """
+		case _:
+			printError("Unsupported AI model type selected (channel: " + c + ").\n")
+			exit(1)
 
 	#set GLOBAL variables
 	CONTEXT = getCfgOptionStr(config, "AI", "context", "You are helpful and friendly assistant.")
+	HISTORY_TIME = getCfgOptionInt(config, "AI", "history_time", 0)
 	HISTORY = getCfgOptionInt(config, "AI", "history", 0)
 	USE_NICK = getCfgOptionBoolean(config, "AI", "use_nick", False)
 
@@ -472,7 +589,7 @@ try:
 
 	"""
 	Load channels settings
-		ELEMENT FORMAT: NAME, CONTEXT, HISTORY, USE_NICK, MODEL, API_KEY, AI(var)
+		ELEMENT FORMAT: NAME, CONTEXT, HISTORY_TIME, HISTORY, USE_NICK, MODEL, API_KEY, API, AI(var)
 	"""
 	i = 0
 	CHANNEL = []
@@ -485,34 +602,29 @@ try:
 			if (len(c) == 0):
 				break
 			cx = getCfgOptionStr(config, "IRC", "channel[" + ist + "].context", CONTEXT)
+			ht = getCfgOptionInt(config, "IRC", "channel[" + ist + "].history_time", HISTORY_TIME)
 			h = getCfgOptionInt(config, "IRC", "channel[" + ist + "].history", HISTORY)
 			u = getCfgOptionBoolean(config, "IRC", "channel[" + ist + "].use_nick", USE_NICK)
 			m = getCfgOptionStr(config, "IRC", "channel[" + ist + "].model", AI_MODEL)
 			ak = getCfgOptionStr(config, "IRC", "channel[" + ist + "].api_key", AI_API_KEY)
-#			try:
-#				m = config.get("IRC", "channel[" + ist + "].model")
-#				if (len(m) == 0):
-#					m = AI_MODEL
-#					ak = AI_API_KEY
-#				else:
-#					try:
-#						ak = config.get("IRC", "channel[" + ist + "].api_key")
-#						if (len(ak) == 0):
-#							ak = AI_API_KEY
-#					except:
-#						ak = AI_API_KEY
-#			except:
-#				m = AI_MODEL
-#				ak = AI_API_KEY
-			if (m in chatcompletion_models) | (m in images_models):
-				ai = openai.OpenAI(api_key=ak)
-			elif (m in anthropic_models):
-				ai = anthropic.Anthropic(api_key=ak)
-			else:
-				printError("Unsupported AI model selected (channel: " + c + ").\n")
-				exit(1)
+			api = getApiFromModel(m, MODEL)
+			match (api):
+				case "anthropic":
+					ai = anthropic.Anthropic(api_key=ak)
+				case "openai":
+					ai = openai.OpenAI(api_key=ak)
+				case _:
+					printError("Unsupported AI model selected (channel: " + c + ").\n")
+					exit(1)
+			t = getTypeFromModel(m, MODEL)
+			match (t):
+				case "chat" | "image":
+					""" OK """
+				case _:
+					printError("Unsupported AI model type selected (channel: " + c + ").\n")
+					exit(1)
 			if (getChannelIndex(c, CHANNEL) < 0):
-				CHANNEL.append([c, cx, h, u, m, ak, ai])
+				CHANNEL.append([c, cx, ht, h, u, m, ak, api, t, ai])
 				CHANNELS += c + ","
 			i += 1
 		except:
@@ -654,95 +766,120 @@ while True:
 				chunk0to3 = chunk[0] + " " + chunk[1] + " " + chunk[2] + " " + chunk[3] + " "
 				""" respond if channel starts with # and if message is addressed to me """
 				if (channel.startswith("#")) and ((to.lower()) == (nickname.lower() + ":")):
-					""" check if channel is present in CHANNEL """
+					""" check if channel is present in CHANNEL table """
 					channel_id = getChannelIndex(channel, CHANNEL)
-					""" add channel using GLOBAL defaults for channel bot was invited to"""
+					""" add channel using GLOBAL defaults for channel bot was invited to """
 					if (channel_id < 0):
-						CHANNEL.append([channel, CONTEXT, HISTORY, USE_NICK, AI_MODEL, AI_API_KEY, AI])
+						CHANNEL.append([channel, CONTEXT, HISTORY_TIME, HISTORY, USE_NICK, AI_MODEL, AI_API_KEY, AI])
 						channel_id = getChannelIndex(channel, CHANNEL)
 					""" pull channel settings """
 					CHAN = CHANNEL[channel_id]
 					""" set the Q/A history """
-					leaveInChannelHistory(previous_QA, CHAN[0], CHAN[2])
-					""" prepare assistant's profile (instructions) with current time included """
-					profile = todayIsUTC() + " " + CHAN[1]
-					""" if use_nik is set """
-					if (CHAN[3]):
-						profile += " When responding, address the person using their nickname. This question was asked by a person who's nickname is " + who_nick + "."
+					leaveInChannelHistory(previous_QA, CHAN[0], CHAN[2], CHAN[3])
+					""" prepare assistant's tracking information """
+					profile_hist = " On this channel you "
+					if (CHAN[3] > 0):
+						if (CHAN[2] > 0):
+							profile_hist += "track previous " + str(CHAN[3]) + " questions/answers within last " + str(CHAN[2]) + " seconds."
+						elif (CHAN[2] == 0):
+							profile_hist += "do not track any previous questions/answers."
+						else:
+							profile_hist += "track previous " + str(CHAN[3]) + " questions/answers."
+					elif (CHAN[3] == 0):
+						profile_hist += "do not track any previous questions/answers."
+					elif (CHAN[3] < 0):
+						if (CHAN[2] > 0):
+							profile_hist += "track all previous questions/answers within last " + str(CHAN[2]) + " seconds."
+						elif (CHAN[2] == 0):
+							profile_hist += "do not track any previous questions/answers."
+						else:
+							profile_hist += "track all previous questions/answers."
+					else:
+						""" this point should never be reached """
+						profile_hist = ""
+					""" prepare assistant's complete profile (instructions) with current date/time, configured context tracking information """
+					profile = todayIsUTC() + " " + CHAN[1] + profile_hist
+					""" """
+					profile += " As and IRC bot with AI back-end, I was created and written by Mariusz J. Handke, and you can contact him on IRCnet or IRCnet2 using his nickname 'oiram'."
+					""" if use_nick is set """
+					if (CHAN[4]):
+						""" OBSOLETE """
+						#profile += " When responding, address the person using their nickname. This question was asked by a person who's nickname is " + who_nick + "."
 					""" pull out the question """
 					question = ircmsg[len(chunk0to3):].strip()
 					""" display question on console (CHANNEL : WHO_FULL : QUESTION) """
 					print(CHAN[0] + " : " + who_full + " : " + question)
-					""" process message in accordance with selected AI_MODEL """
-					if (CHAN[4] in chatcompletion_models):
-						""" OpenAI """
-						messages = [{ "role": "system", "content": profile }] + prepMessages(previous_QA, CHAN[0], CHAN[2], question)
-						try:
-							response = CHAN[6].chat.completions.create(
-								model=CHAN[4],
-								max_tokens=MAX_TOKENS,
-								temperature=TEMPERATURE,
-								messages=messages,
-								frequency_penalty=FREQUENCY_PENALTY,
-								presence_penalty=PRESENCE_PENALTY,
-								response_format={"type": "text"}
-							)
-							answers = response.choices[0].message.content.strip()
-							previous_QA.append([CHAN[0], nowUTC().timestamp(), who_nick, question, answers])
-							sendMessageToIrcChannel(irc, CHAN[0], who_nick, answers)
-						except ai.error.Timeout as e:
-							printError(str(e) + "\n")
-						except ai.error.OpenAIError as e:
-							printError(str(e) + "\n")
-						except Exception as e:
-							printError(str(e) + "\n")
-					elif (CHAN[4] in images_models):
-						""" OpenAI """
-						try:
-							response = CHAN[6].Image.create(
-								model=CHAN[4],
-								prompt=question,
-								n=1,
-								size="1024x1024"
-							)
-							long_url = response.ircmsg[0].url
-							type_tiny = pyshorteners.Shortener()
-							short_url = type_tiny.tinyurl.short(long_url)
-							sendMessageToIrcChannel(irc, CHAN[0], who_nick, short_url)
-						except ai.error.Timeout as e:
-							printError(str(e) + "\n")
-						except ai.error.OpenAIError as e:
-							printError(str(e) + "\n")
-						except Exception as e:
-							printError(str(e) + "\n")
-					elif (CHAN[4] in anthropic_models):
-						""" Anthropic """
-						messages = [] + prepMessages(previous_QA, CHAN[0], CHAN[2], question)
-						try:
-							response = CHAN[6].messages.create(
-								model=CHAN[4],
-								max_tokens=MAX_TOKENS,
-								temperature=TEMPERATURE,
-								system=profile,
-								messages=messages,
-							)
-							answers = response.content[0].text.strip()
-							previous_QA.append([CHAN[0], nowUTC().timestamp(), who_nick, question, answers])
-							sendMessageToIrcChannel(irc, CHAN[0], who_nick, answers)
-						except ai.APIConnectionError as e:
-							printError("The server could not be reached." + str(e) + "\n")
-							print(e.__cause__)
-						except ai.RateLimitError as e:
-							printError("A 429 status code was received; we should back off a bit.\n")
-						except ai.APIStatusError as e:
-							printError("Another non-200-range status code was received.\n")
-							print(e.status_code)
-							print(e.response)
-						except Exception as e:
-							printError(str(e) + "\n")
-					else:
-						printError("Invalid AI model selected.\n")
-						continue
+					""" process the message in accordance with selected AI_MODEL """
+					match (CHAN[7].lower() + "/" + CHAN[8].lower()):
+						case "anthropic/chat":
+							messages = [] + prepMessages(previous_QA, CHAN[0], CHAN[2], CHAN[3], question)
+							try:
+								response = CHAN[9].messages.create(
+									model=CHAN[5],
+									max_tokens=MAX_TOKENS,
+									temperature=TEMPERATURE,
+									system=profile,
+									messages=messages,
+								)
+								answers = response.content[0].text.strip()
+								previous_QA.append([CHAN[0], nowUTC().timestamp(), who_nick, question, answers])
+								sendMessageToIrcChannel(irc, CHAN[0], who_nick, answers)
+							except ai.APIConnectionError as e:
+								printError("The server could not be reached." + str(e) + "\n")
+								print(e.__cause__)
+							except ai.RateLimitError as e:
+								printError("A 429 status code was received; we should back off a bit.\n")
+							except ai.APIStatusError as e:
+								printError("Another non-200-range status code was received.\n")
+								print(e.status_code)
+								print(e.response)
+							except Exception as e:
+								printError(str(e) + "\n")
+						case "anthropic/image":
+							""" not supported yet """
+						case "openai/chat":
+							messages = [{ "role": "system", "content": profile }] + prepMessages(previous_QA, CHAN[0], CHAN[2], CHAN[3], question)
+							try:
+								response = CHAN[9].chat.completions.create(
+									model=CHAN[5],
+									max_tokens=MAX_TOKENS,
+									temperature=TEMPERATURE,
+									messages=messages,
+									frequency_penalty=FREQUENCY_PENALTY,
+									presence_penalty=PRESENCE_PENALTY,
+									response_format={"type": "text"}
+								)
+								answers = response.choices[0].message.content.strip()
+								previous_QA.append([CHAN[0], nowUTC().timestamp(), who_nick, question, answers])
+								sendMessageToIrcChannel(irc, CHAN[0], who_nick, answers)
+							except ai.error.Timeout as e:
+								printError(str(e) + "\n")
+							except ai.error.OpenAIError as e:
+								printError(str(e) + "\n")
+							except Exception as e:
+								printError(str(e) + "\n")
+						case "openai/image":
+							try:
+								response = CHAN[9].Image.create(
+									model=CHAN[5],
+									prompt=question,
+									n=1,
+									size="1024x1024"
+								)
+								long_url = response.ircmsg[0].url
+								type_tiny = pyshorteners.Shortener()
+								short_url = type_tiny.tinyurl.short(long_url)
+								sendMessageToIrcChannel(irc, CHAN[0], who_nick, short_url)
+							except ai.error.Timeout as e:
+								printError(str(e) + "\n")
+							except ai.error.OpenAIError as e:
+								printError(str(e) + "\n")
+							except Exception as e:
+								printError(str(e) + "\n")
+						case _:
+							""" this point shall not be reached, it shall be already identified during initialization """
+							printError("Invalid AI model selected.\n")
+							continue
 			case "QUIT":
 				print("", end="")
 			case _:
