@@ -17,15 +17,18 @@ import openai
 import anthropic
 
 VERSION = "20241130"
+AUTHOR = "Mariusz J. Handke"
+AUTHOR_NICK = "oiram"
+GH = "https://github.com/oiramNet/AI-IRC-Bot"
 
 print("")
 print("+----------------------------------------+")
 print("|               AI IRC Bot               |")
 print("|                " + VERSION + "                |")
-print("|          by Mariusz J. Handke          |")
-print("|      oiram@IRCnet   oiram@IRCnet2      |")
+print("|          by " + AUTHOR + "          |")
+print("|      " + AUTHOR_NICK + "@IRCnet   " + AUTHOR_NICK + "@IRCnet2      |")
 print("|                                        |")
-print("| https://github.com/oiramNet/AI-IRC-Bot |")
+print("| " + GH + " |")
 print("+----------------------------------------+")
 print("")
 
@@ -188,25 +191,20 @@ def ircSetNick(irc, nick, nickname):
 			"""
 			UNKNOWN RCODE
 			"""
-			#printInfo("ircSetNick nick = " + str(nick))
-			#printInfo("ircSetNick ircmsg = " + str(ircmsg))
-			#printInfo("ircSetNick RCODE = " + str(rcode))
 			rnick = nick
 	return rnick
 
 def ircJoinChannels(irc, channels):
 	"""
-	Join channels
+	PURPOSE:	Join channels
+	VERIFIED:	YES
 	"""
 	irc.send(bytes("JOIN " + channels + "\n", "UTF-8"))
-#	ircmsg = ""
-#	while ircmsg.find("End of /NAMES list.") == -1:
-#		ircmsg = getData(irc)
-#		print("ircmsg = ", ircmsg)
 
 def ircConnect(server, port, tls, password, ident, realname, wait):
 	"""
-	Connect to IRC server using RANDOM nick
+	PURPOSE:	Connect to IRC server using RANDOM nick
+	VERIFIED:	YES
 	"""
 	time.sleep(wait)
 	""" generate 9 characters random nick (AIbot####) """
@@ -221,44 +219,24 @@ def ircConnect(server, port, tls, password, ident, realname, wait):
 				ircmsg = getData(irc)
 				rcode = ircmsg.split()[1]
 				if rcode == "020":
-					"""
-					some IRC server sends info message/motd/...
-					"""
 					ircmsg = getData(irc)
 					rcode = ircmsg.split()[1]
 				match rcode:
 					case "001":
-						"""
-						RPL_WELCOME (RFC2812)
-						"""
+						printInfo("*** RPL_WELCOME (RFC2812) ***")
 					case "432":
-						"""
-						ERR_ERRONEUSNICKNAME (RFC1459)
-						"""
 						printInfo("*** ERR_ERRONEUSNICKNAME (RFC1459) ***")
 						connected = False
 					case "433":
-						"""
-						ERR_NICKNAMEINUSE (RFC1459)
-						"""
 						printInfo("*** ERR_NICKNAMEINUSE (RFC1459) ***")
 						connected = False
 					case "465":
-						"""
-						ERR_YOUREBANNEDCREEP (RFC1459)
-						"""
 						printInfo("*** ERR_YOUREBANNEDCREEP (RFC1459) ***")
 						connected = False
 					case ":Closing":
-						"""
-						??? (RFC???)
-						"""
 						printInfo("*** CLOSING ***")
 						connected = False
 					case _:
-						"""
-						UNKNOWN RCODE
-						"""
 						printInfo("ircConnect RCODE = " + str(rcode))
 			except:
 				printError("Connection to " + server + " failed - getData()")
@@ -292,10 +270,8 @@ def ircConnectionDetails(irc, server, port, tls, password, ident, realname, nick
 def sendMessageToIrcChannel(irc, channel, reply_to, message):
 	"""
 	PURPOSE:	Send message to IRC channel
-	VERIFIED:	TO DO
+	VERIFIED:	YES
 	"""
-#	if reply_to != "":
-#		irc.send(bytes("PRIVMSG " + channel + " :" + reply_to + ": ...\n", "UTF-8"))
 	msgs = [x.strip() for x in (reply_to + ": " + message).split('\n')]
 	for msg in msgs:
 		while len(msg) > 0:
@@ -776,14 +752,14 @@ while True:
 					channel_id = getChannelIndex(channel, CHANNEL)
 					""" add channel using GLOBAL defaults for channel bot was invited to """
 					if (channel_id < 0):
-						CHANNEL.append([channel, CONTEXT, HISTORY_TIME, HISTORY, USE_NICK, AI_MODEL, AI_API_KEY, AI])
+						CHANNEL.append([channel, CONTEXT, HISTORY_TIME, HISTORY, USE_NICK, AI_MODEL, AI_API_KEY, AI_API, AI_TYPE, AI])
 						channel_id = getChannelIndex(channel, CHANNEL)
 					""" pull channel settings """
 					CHAN = CHANNEL[channel_id]
 					""" set the Q/A history """
 					leaveInChannelHistory(previous_QA, CHAN[0], CHAN[2], CHAN[3])
 					""" prepare assistant's tracking information """
-					profile_hist = " On this channel you "
+					profile_hist = " On this channel (" + CHAN[0] + ") you "
 					if (CHAN[3] > 0):
 						if (CHAN[2] > 0):
 							profile_hist += "track previous " + str(CHAN[3]) + " questions/answers within last " + str(CHAN[2]) + " seconds."
@@ -805,12 +781,13 @@ while True:
 						profile_hist = ""
 					""" prepare assistant's complete profile (instructions) with current date/time, configured context tracking information """
 					profile = todayIsUTC() + " " + CHAN[1] + profile_hist
-					""" """
-					profile += " As and IRC bot with AI back-end, I was created and written by Mariusz J. Handke, and you can contact him on IRCnet or IRCnet2 using his nickname 'oiram'."
+					""" add information about author and model """
+					profile += " As an IRC bot with the AI back-end from " + CHAN[7] + "(model: " + CHAN[5] + "), you were created and written by " + AUTHOR + ", and he can be contacted on IRCnet or IRCnet2 using his nickname '" + AUTHOR_NICK + "'."
+					profile += " You are currently running version " + VERSION + " and the latest version can be found on GitHub (" + GH + ")."
+					profile += " You are operating on public channels on IRC, so if anyone asks you about discussion with other users make sure to provide that information. "
 					""" if use_nick is set """
 					if (CHAN[4]):
-						""" OBSOLETE """
-						#profile += " When responding, address the person using their nickname. This question was asked by a person who's nickname is " + who_nick + "."
+						profile += " When responding, make sure you address the person using their nickname. This question was asked by a person who's nickname is " + who_nick + "."
 					""" pull out the question """
 					question = ircmsg[len(chunk0to3):].strip()
 					""" display question on console (CHANNEL : WHO_FULL : QUESTION) """
