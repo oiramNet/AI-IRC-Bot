@@ -151,6 +151,7 @@ def netConnect(server, port, tls):
 		""" add exception handling """
 	if (tls):
 		sslcontext = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+		sslcontext.minimum_version = ssl.TLSVersion.TLSv1_2
 		sslcontext.check_hostname = False
 		sslcontext.verify_mode = ssl.CERT_NONE
 		sock = sslcontext.wrap_socket(sock, server_hostname=server)
