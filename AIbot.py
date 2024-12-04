@@ -16,7 +16,7 @@ AI API(s)
 import openai
 import anthropic
 
-VERSION = "20241130"
+VERSION = "20241204"
 AUTHOR = "Mariusz J. Handke"
 AUTHOR_NICK = "oiram"
 GH = "https://github.com/oiramNet/AI-IRC-Bot"
@@ -114,7 +114,7 @@ def strtobool(val):	# not used
 							False: 'n'|'no'|'f'|'false'|'off'|'0'
 	VERIFIED:	YES
 	"""
-	match val.lower().strip():
+	match (val.lower().strip()):
 		case 'y'|'yes'|'t'|'true'|'on'|'1':
 			return 1
 		case 'n'|'no'|'f'|'false'|'off'|'0':
@@ -169,28 +169,29 @@ def ircAuth(irc, password, ident, realname, nickname):
 
 def ircSetNick(irc, nick, nickname):
 	"""
-	Set the nickname
-		nick: correct/expected nickname (from config)
-		nickname: random nickname (eg. generated during connection)
+	PURPOSE:	Set (change) the nickname
+							nick: nickname to set
+							nickname: previous nickname
+	VERIFIED:	YES
 	"""
 	irc.send(bytes("NICK " + nick + "\n", "UTF-8"))
 	ircmsg = getData(irc)
 	rcode = ircmsg.split()[1]
 	rnick = nickname
-	match rcode:
+	match (rcode):
 		case "432":
 			"""
 			ERR_ERRONEUSNICKNAME (RFC1459)
 			"""
-			printError("Erroneus nickname (" + nick + "). Using random nickname instead (" + nickname + ")")
+			printError("Erroneus nickname (" + nick + "). Using previous nickname instead (" + nickname + ")")
 		case "433":
 			"""
 			ERR_NICKNAMEINUSE (RFC1459)
 			"""
-			printError("My nickname (" + nick + ") is in use. Using random nickname instead (" + nickname + ")")
+			printError("My nickname (" + nick + ") is in use. Using previous nickname instead (" + nickname + ")")
 		case _:
 			"""
-			UNKNOWN RCODE
+			UNKNOWN RCODE, nick probably accepted
 			"""
 			rnick = nick
 	return rnick
@@ -222,7 +223,7 @@ def ircConnect(server, port, tls, password, ident, realname, wait):
 				if rcode == "020":
 					ircmsg = getData(irc)
 					rcode = ircmsg.split()[1]
-				match rcode:
+				match (rcode):
 					case "001":
 						printInfo("*** RPL_WELCOME (RFC2812) ***")
 					case "432":
@@ -298,9 +299,9 @@ def getChannelIndex(channel, channels):
 			break
 	return i
 
-def getChannelHistoryT(QA, C, T):
+def getChannelHistoryT(QA, C, U, T):
 	"""
-	PURPOSE:	Return list of Q/A pairs for the channel (C) based on time (T)
+	PURPOSE:	Return list of Q/A pairs for the channel (C) from user (U) based on time (T)
 							T > 0:	within last T seconds
 							T = 0:	return no pairs
 							T < 0:	return all pairs
@@ -314,13 +315,14 @@ def getChannelHistoryT(QA, C, T):
 	else:
 		t0 = nowUTC().timestamp() - T
 	for element in QA:
-		if (element[0].lower() == C.lower()) and (element[1] >= t0):
+#		if (element[0].lower() == C.lower()) and (element[1] >= t0):
+		if ((element[0].lower() == C.lower()) and ((U == "") or (U == "*") or (element[2].lower() == U.lower())) and (element[1] >= t0)):
 			QA_chan.append(element)
 	return QA_chan
 
-def getChannelHistoryN(QA, C, N):
+def getChannelHistoryN(QA, C, U, N):
 	"""
-	PURPOSE:	Return list of Q/A pairs for the channel (C) based on number (N)
+	PURPOSE:	Return list of Q/A pairs for the channel (C) from user (U) based on number (N)
 							N > 0: return last N pairs
 							N = 0: return no pairs
 							N < 0: return all pairs
@@ -328,7 +330,7 @@ def getChannelHistoryN(QA, C, N):
 	"""
 	QA_chan = []
 	for element in QA:
-		if (element[0].lower() == C.lower()):
+		if ((element[0].lower() == C.lower()) and ((U == "") or (U == "*") or (element[2].lower() == U.lower()))):
 			QA_chan.append(element)
 	if (N < 0):
 		return QA_chan
@@ -337,21 +339,21 @@ def getChannelHistoryN(QA, C, N):
 	else:
 		return QA_chan[-N:]
 
-def getChannelHistory(QA, C, T, N):
+def getChannelHistory(QA, C, U, T, N):
 	"""
-	PURPOSE:	Return list of Q/A pairs for the channel (C) based on time (T) and number (N)
+	PURPOSE:	Return list of Q/A pairs for the channel (C) from user (U) based on time (T) and number (N)
 	VERIFIED:	YES
 	"""
-	QA_chan = getChannelHistoryT(QA, C, T)
-	QA_chan = getChannelHistoryN(QA_chan, C, N)
+	QA_chan = getChannelHistoryT(QA, C, U, T)
+	QA_chan = getChannelHistoryN(QA_chan, C, U, N)
 	return QA_chan
 
-def leaveInChannelHistory(QA, C, T, N):
+def leaveInChannelHistory(QA, C, U, T, N):
 	"""
-	PURPOSE:	Leave in history Q/A pairs for the channel (C) based on time (T) and number (N)
+	PURPOSE:	Leave in history Q/A pairs for the channel (C) from user (U) based on time (T) and number (N)
 	VERIFIED:	YES
 	"""
-	QA_chan = getChannelHistory(QA, C, T, N)
+	QA_chan = getChannelHistory(QA, C, U, T, N)
 	delete = []
 	for element in QA:
 		if (element[0].lower() == C.lower()):
@@ -364,23 +366,27 @@ def leaveInChannelHistory(QA, C, T, N):
 	for element in delete:
 		QA.remove(element)
 
-def prepMessages(QA, C, T, N, Q):
+def prepMessages(QA, C, U, T, N, Q):
 	"""
-	PURPOSE:	Create list of AI-readable previous messages for the channel (C) based on time (T) and number (N) and add current question (Q)
-	VERIFIED:	TO DO
+	PURPOSE:	Create list of AI-readable previous messages for the channel (C) from user (U) based on time (T) and number (N) and add current question (Q)
+	VERIFIED:	YES
 	"""
 	""" get previous Q/A pairs """
-	QA_chan = getChannelHistory(QA, C, T, N)
+	QA_chan = getChannelHistory(QA, C, U, T, N)
 	""" change into list of AI-readable messages (user/assistant pairs) """
 	messages = []
-	for c, t, n, q, a in QA_chan[:]:
-		messages.append({"role": "user", "content": q})
-		messages.append({"role": "assistant", "content": a})
+	for element in QA_chan:
+		messages.append({"role": "user", "content": element[3]})
+		messages.append({"role": "assistant", "content": element[4]})
 	""" append current question """
 	messages.append({"role": "user", "content": Q})
 	return messages
 
 def getCfgOptionStr(config, section, name, default):
+	"""
+	PURPOSE:	Return string value of a setting (name) from section in config or default value
+	VERIFIED:	YES
+	"""
 	try:
 		option = config.get(section, name)
 		if (len(option) == 0):
@@ -390,6 +396,10 @@ def getCfgOptionStr(config, section, name, default):
 	return option
 
 def getCfgOptionInt(config, section, name, default):
+	"""
+	PURPOSE:	Return integer value of a setting (name) from section in config or default value
+	VERIFIED:	YES
+	"""
 	try:
 		option = config.getint(section, name)
 	except:
@@ -397,6 +407,10 @@ def getCfgOptionInt(config, section, name, default):
 	return option
 
 def getCfgOptionFloat(config, section, name, default):
+	"""
+	PURPOSE:	Return float value of a setting (name) from section in config or default value
+	VERIFIED:	YES
+	"""
 	try:
 		option = config.getfloat(section, name)
 	except:
@@ -404,40 +418,24 @@ def getCfgOptionFloat(config, section, name, default):
 	return option
 
 def getCfgOptionBoolean(config, section, name, default):
+	"""
+	PURPOSE:	Return boolean value of a setting (name) from section in config or default value
+	VERIFIED:	YES
+	"""
 	try:
 		option = config.getboolean(section, name)
 	except:
 		option = default
 	return option
 
-def getApiFromModel(model, MODEL):
-	"""
-	PURPOSE:	Return API name of the model
-	VERIFIED:	YES
-	"""
-	for element in MODEL:
-		if (element[3].lower() == model.lower()):
-			return element[0].lower()
-	return ""
-
-def getTypeFromModel(model, MODEL):
-	"""
-	PURPOSE:	Return type name of the model
-	VERIFIED:	YES
-	"""
-	for element in MODEL:
-		if (element[3].lower() == model.lower()):
-			return element[2].lower()
-	return ""
-
 def getFromModel(what, model, MODEL):
 	"""
 	PURPOSE:	Return "what" (api, type) of the model
-	VERIFIED:	TO DO
+	VERIFIED:	YES
 	"""
 	for element in MODEL:
 		if (element[3].lower() == model.lower()):
-			match what:
+			match (what.lower()):
 				case "api":
 					return element[0].lower()
 				case "type":
@@ -446,13 +444,48 @@ def getFromModel(what, model, MODEL):
 					return ""
 	return ""
 
-
+def createProfile(CHAN, who_nick):
+	"""
+	PURPOSE:	Return assistant's complete profile (instructions) with current date/time, configured context, tracking information, etc.
+	VERIFIED:	TO DO
+	"""
+	""" prepare assistant's tracking information """
+	profile_hist = " On this channel (" + CHAN[0] + ") you "
+	if (CHAN[3] > 0):
+		if (CHAN[2] > 0):
+			profile_hist += "track previous " + str(CHAN[3]) + " questions/answers within last " + str(CHAN[2]) + " seconds."
+		elif (CHAN[2] == 0):
+			profile_hist += "do not track any previous questions/answers."
+		else:
+			profile_hist += "track previous " + str(CHAN[3]) + " questions/answers."
+	elif (CHAN[3] == 0):
+		profile_hist += "do not track any previous questions/answers."
+	elif (CHAN[3] < 0):
+		if (CHAN[2] > 0):
+			profile_hist += "track all previous questions/answers within last " + str(CHAN[2]) + " seconds."
+		elif (CHAN[2] == 0):
+			profile_hist += "do not track any previous questions/answers."
+		else:
+			profile_hist += "track all previous questions/answers."
+	else:
+		""" this point should never be reached """
+		profile_hist = ""
+	""" prepare assistant's complete profile (instructions) with current date/time, configured context tracking information """
+	profile = todayIsUTC() + " " + CHAN[1] + profile_hist
+	""" if use_nick is set """
+	if (CHAN[4]):
+		profile += " When responding, make sure you address the person using their nickname. This question was asked by a person who's nickname is " + who_nick + "."
+	""" add information about author and model """
+	profile += " As an IRC bot with the AI back-end from " + CHAN[7] + "(model: " + CHAN[5] + "), you were created and written by " + AUTHOR + ", and he can be contacted on IRCnet or IRCnet2 using his nickname '" + AUTHOR_NICK + "'."
+	profile += " You are currently running version " + VERSION + " and the latest version can be found on GitHub (" + GH + ")."
+	profile += " You are operating on public channels on IRC, so if anyone asks you about discussion with other users make sure to provide that information. "
+	""" return bot profile """
+	return profile
 
 """
-CONFIGURATION
+LOAD CONFIGURATION
 	Name of the configuration file is passed as a command-line argument
 """
-
 # Check if configuration file name was provided
 if len(sys.argv)>1:
 	# Read configuration file
@@ -499,7 +532,7 @@ try:
 				""" Unsupported model type """
 	MODELS = MODELS_CHAT + MODELS_IMAGE
 	# Create AI object based on AI_API and assign AI_API_KEY
-	AI_API = getApiFromModel(AI_MODEL, MODEL)
+	AI_API = getFromModel("api", AI_MODEL, MODEL)
 	match (AI_API):
 		case "anthropic":
 			AI = anthropic.Anthropic(api_key=AI_API_KEY)
@@ -508,7 +541,7 @@ try:
 		case _:
 			printError("Unsupported AI model selected (GLOBAL).\n")
 			exit(1)
-	AI_TYPE = getTypeFromModel(AI_MODEL, MODEL)
+	AI_TYPE = getFromModel("type", AI_MODEL, MODEL)
 	match (AI_TYPE):
 		case "chat" | "image":
 			""" OK """
@@ -584,7 +617,7 @@ try:
 			u = getCfgOptionBoolean(config, "IRC", "channel[" + ist + "].use_nick", USE_NICK)
 			m = getCfgOptionStr(config, "IRC", "channel[" + ist + "].model", AI_MODEL)
 			ak = getCfgOptionStr(config, "IRC", "channel[" + ist + "].api_key", AI_API_KEY)
-			api = getApiFromModel(m, MODEL)
+			api = getFromModel("api", m, MODEL)
 			match (api):
 				case "anthropic":
 					try:
@@ -599,7 +632,7 @@ try:
 				case _:
 					printError("Unsupported AI model selected (channel: " + c + ").\n")
 					exit(1)
-			t = getTypeFromModel(m, MODEL)
+			t = getFromModel("type", m, MODEL)
 			match (t):
 				case "chat" | "image":
 					""" OK """
@@ -618,12 +651,9 @@ except Exception as e:
 	printError("Missing or invalid configuration option(s)\n" + str(e) + "\n")
 	exit(1)
 
-
-
-#
-# EXECUTION
-#
-
+"""
+MAIN
+"""
 server_id_max = len(SERVER)-1
 server_id = server_id_max
 irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -636,7 +666,6 @@ previous_QA = []
 
 # Listen for messages from users and answer questions
 while True:
-
 	# Check if data is received and connect/re-connect if needed
 	while True:
 		try:
@@ -698,7 +727,7 @@ while True:
 
 		channel = ""
 
-		match command:
+		match (command):
 			case "353" | "366":
 				"""
 				353: RPL_NAMREPLY (RFC1459)
@@ -758,37 +787,9 @@ while True:
 					""" pull channel settings """
 					CHAN = CHANNEL[channel_id]
 					""" set the Q/A history """
-					leaveInChannelHistory(previous_QA, CHAN[0], CHAN[2], CHAN[3])
-					""" prepare assistant's tracking information """
-					profile_hist = " On this channel (" + CHAN[0] + ") you "
-					if (CHAN[3] > 0):
-						if (CHAN[2] > 0):
-							profile_hist += "track previous " + str(CHAN[3]) + " questions/answers within last " + str(CHAN[2]) + " seconds."
-						elif (CHAN[2] == 0):
-							profile_hist += "do not track any previous questions/answers."
-						else:
-							profile_hist += "track previous " + str(CHAN[3]) + " questions/answers."
-					elif (CHAN[3] == 0):
-						profile_hist += "do not track any previous questions/answers."
-					elif (CHAN[3] < 0):
-						if (CHAN[2] > 0):
-							profile_hist += "track all previous questions/answers within last " + str(CHAN[2]) + " seconds."
-						elif (CHAN[2] == 0):
-							profile_hist += "do not track any previous questions/answers."
-						else:
-							profile_hist += "track all previous questions/answers."
-					else:
-						""" this point should never be reached """
-						profile_hist = ""
-					""" prepare assistant's complete profile (instructions) with current date/time, configured context tracking information """
-					profile = todayIsUTC() + " " + CHAN[1] + profile_hist
-					""" add information about author and model """
-					profile += " As an IRC bot with the AI back-end from " + CHAN[7] + "(model: " + CHAN[5] + "), you were created and written by " + AUTHOR + ", and he can be contacted on IRCnet or IRCnet2 using his nickname '" + AUTHOR_NICK + "'."
-					profile += " You are currently running version " + VERSION + " and the latest version can be found on GitHub (" + GH + ")."
-					profile += " You are operating on public channels on IRC, so if anyone asks you about discussion with other users make sure to provide that information. "
-					""" if use_nick is set """
-					if (CHAN[4]):
-						profile += " When responding, make sure you address the person using their nickname. This question was asked by a person who's nickname is " + who_nick + "."
+					leaveInChannelHistory(previous_QA, CHAN[0], who_nick, CHAN[2], CHAN[3])
+					""" get assistant's complete profile (context/instructions) """
+					profile = createProfile(CHAN, who_nick)
 					""" pull out the question """
 					question = ircmsg[len(chunk0to3):].strip()
 					""" display question on console (CHANNEL : WHO_FULL : QUESTION) """
@@ -796,7 +797,7 @@ while True:
 					""" process the message in accordance with selected AI_MODEL """
 					match (CHAN[7].lower() + "/" + CHAN[8].lower()):
 						case "anthropic/chat":
-							messages = [] + prepMessages(previous_QA, CHAN[0], CHAN[2], CHAN[3], question)
+							messages = [] + prepMessages(previous_QA, CHAN[0], who_nick, CHAN[2], CHAN[3], question)
 							try:
 								response = CHAN[9].messages.create(
 									model=CHAN[5],
@@ -822,7 +823,7 @@ while True:
 						case "anthropic/image":
 							""" not supported yet """
 						case "openai/chat":
-							messages = [{ "role": "system", "content": profile }] + prepMessages(previous_QA, CHAN[0], CHAN[2], CHAN[3], question)
+							messages = [{ "role": "system", "content": profile }] + prepMessages(previous_QA, CHAN[0], who_nick, CHAN[2], CHAN[3], question)
 							try:
 								response = CHAN[9].chat.completions.create(
 									model=CHAN[5],
