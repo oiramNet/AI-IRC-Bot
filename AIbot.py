@@ -16,7 +16,7 @@ AI API(s)
 import openai
 import anthropic
 
-VERSION = "20241204"
+VERSION = "20241206"
 AUTHOR = "Mariusz J. Handke"
 AUTHOR_NICK = "oiram"
 GH = "https://github.com/oiramNet/AI-IRC-Bot"
@@ -311,9 +311,9 @@ def getChannelHistoryT(QA, C, U, T):
 	if (T < 0):
 		t0 = 0
 	elif (T == 0):
-		t0 = 2 * nowUTC().timestamp()
+		t0 = 2 * int(nowUTC().timestamp())	# 20241206
 	else:
-		t0 = nowUTC().timestamp() - T
+		t0 = int(nowUTC().timestamp()) - T	# 20241206
 	for element in QA:
 #		if (element[0].lower() == C.lower()) and (element[1] >= t0):
 		if ((element[0].lower() == C.lower()) and ((U == "") or (U == "*") or (element[2].lower() == U.lower())) and (element[1] >= t0)):
@@ -792,8 +792,10 @@ while True:
 					profile = createProfile(CHAN, who_nick)
 					""" pull out the question """
 					question = ircmsg[len(chunk0to3):].strip()
-					""" display question on console (CHANNEL : WHO_FULL : QUESTION) """
-					print(CHAN[0] + " : " + who_full + " : " + question)
+					""" display question on console (TIMESTAMP : CHANNEL : WHO_FULL : QUESTION) """
+					ts = int(nowUTC().timestamp())	# 20241206
+					tsh = datetime.datetime.fromtimestamp(ts, pytz.timezone('UTC')).strftime('%Y-%m-%d %H:%M:%S')	# 20241206
+					print(str(tsh) + " : " + CHAN[0] + " : " + who_full + " : " + question)
 					""" process the message in accordance with selected AI_MODEL """
 					match (CHAN[7].lower() + "/" + CHAN[8].lower()):
 						case "anthropic/chat":
@@ -807,7 +809,7 @@ while True:
 									messages=messages,
 								)
 								answers = response.content[0].text.strip()
-								previous_QA.append([CHAN[0], nowUTC().timestamp(), who_nick, question, answers])
+								previous_QA.append([CHAN[0], ts, who_nick, question, answers])
 								sendMessageToIrcChannel(irc, CHAN[0], who_nick, answers)
 							except ai.APIConnectionError as e:
 								printError("The server could not be reached." + str(e) + "\n")
@@ -835,7 +837,7 @@ while True:
 									response_format={"type": "text"}
 								)
 								answers = response.choices[0].message.content.strip()
-								previous_QA.append([CHAN[0], nowUTC().timestamp(), who_nick, question, answers])
+								previous_QA.append([CHAN[0], ts, who_nick, question, answers])
 								sendMessageToIrcChannel(irc, CHAN[0], who_nick, answers)
 							except ai.error.Timeout as e:
 								printError(str(e) + "\n")
@@ -854,6 +856,7 @@ while True:
 								long_url = response.ircmsg[0].url
 								type_tiny = pyshorteners.Shortener()
 								short_url = type_tiny.tinyurl.short(long_url)
+								previous_QA.append([CHAN[0], ts, who_nick, question, short_url])
 								sendMessageToIrcChannel(irc, CHAN[0], who_nick, short_url)
 							except ai.error.Timeout as e:
 								printError(str(e) + "\n")
