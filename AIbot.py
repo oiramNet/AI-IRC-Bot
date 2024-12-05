@@ -21,6 +21,13 @@ AUTHOR = "Mariusz J. Handke"
 AUTHOR_NICK = "oiram"
 GH = "https://github.com/oiramNet/AI-IRC-Bot"
 
+PROG = sys.argv[0]
+LOG = PROG + ".log"
+if len(sys.argv)>1:
+	CONF_FILE = sys.argv[1]
+else:
+	CONF_FILE = ""
+
 print("")
 print("+----------------------------------------+")
 print("|               AI IRC Bot               |")
@@ -482,27 +489,37 @@ def createProfile(CHAN, who_nick):
 	""" return bot profile """
 	return profile
 
+def writeToLog(msg):
+	"""
+	PURPOSE:	Write to logfile
+	VERIFIED:	YES
+	"""
+	log = open(LOG, "a")
+	log.write(str(msg.strip()) + "\n")
+	log.close()
+
+
+
 """
 LOAD CONFIGURATION
 	Name of the configuration file is passed as a command-line argument
 """
 # Check if configuration file name was provided
-if len(sys.argv)>1:
+if (len(CONF_FILE)>0):
 	# Read configuration file
-	conf_file = sys.argv[1]
-	if os.path.isfile(conf_file):
-		printInfo("Loading configuration file (" + conf_file + ")")
+	if os.path.isfile(CONF_FILE):
+		printInfo("Loading configuration file (" + CONF_FILE + ")")
 		config = configparser.ConfigParser()
 		try:
-			config.read(conf_file)
+			config.read(CONF_FILE)
 		except Exception as e:
 			printError("Configuration file loading error.\n" + str(e) + "\n")
 			exit(1)
 	else:
-		printError("Specified configuration file (" + conf_file + ") does not exist.\n")
+		printError("Specified configuration file (" + CONF_FILE + ") does not exist.\n")
 		exit(1)
 else:
-	printError("Missing configuration file name.\n\nUSAGE: " + sys.argv[0] + " CONF_FILE\n")
+	printError("Missing configuration file name.\n\nUSAGE: " + PROG + " CONF_FILE\n")
 	exit(1)
 
 try:
@@ -795,7 +812,8 @@ while True:
 					""" display question on console (TIMESTAMP : CHANNEL : WHO_FULL : QUESTION) """
 					ts = int(nowUTC().timestamp())	# 20241206
 					tsh = datetime.datetime.fromtimestamp(ts, pytz.timezone('UTC')).strftime('%Y-%m-%d %H:%M:%S')	# 20241206
-					print(str(tsh) + " : " + CHAN[0] + " : " + who_full + " : " + question)
+					print(str(tsh) + " : " + CHAN[0] + " : " + who_full + " : " + question)	# 20241206
+					writeToLog(str(tsh) + " : " + CHAN[0] + " : " + who_full + " : " + question)	# 20241206
 					""" process the message in accordance with selected AI_MODEL """
 					match (CHAN[7].lower() + "/" + CHAN[8].lower()):
 						case "anthropic/chat":
@@ -809,7 +827,7 @@ while True:
 									messages=messages,
 								)
 								answers = response.content[0].text.strip()
-								previous_QA.append([CHAN[0], ts, who_nick, question, answers])
+								previous_QA.append([CHAN[0], ts, who_nick, question, answers])	# 20241206
 								sendMessageToIrcChannel(irc, CHAN[0], who_nick, answers)
 							except ai.APIConnectionError as e:
 								printError("The server could not be reached." + str(e) + "\n")
@@ -837,7 +855,7 @@ while True:
 									response_format={"type": "text"}
 								)
 								answers = response.choices[0].message.content.strip()
-								previous_QA.append([CHAN[0], ts, who_nick, question, answers])
+								previous_QA.append([CHAN[0], ts, who_nick, question, answers])	# 20241206
 								sendMessageToIrcChannel(irc, CHAN[0], who_nick, answers)
 							except ai.error.Timeout as e:
 								printError(str(e) + "\n")
@@ -856,7 +874,7 @@ while True:
 								long_url = response.ircmsg[0].url
 								type_tiny = pyshorteners.Shortener()
 								short_url = type_tiny.tinyurl.short(long_url)
-								previous_QA.append([CHAN[0], ts, who_nick, question, short_url])
+								previous_QA.append([CHAN[0], ts, who_nick, question, short_url])	# 20241206
 								sendMessageToIrcChannel(irc, CHAN[0], who_nick, short_url)
 							except ai.error.Timeout as e:
 								printError(str(e) + "\n")
