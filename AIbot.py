@@ -16,7 +16,7 @@ AI API(s)
 import openai
 import anthropic
 
-VERSION = "20241206"
+VERSION = "20250203"
 AUTHOR = "Mariusz J. Handke"
 AUTHOR_NICK = "oiram"
 GH = "https://github.com/oiramNet/AI-IRC-Bot"
@@ -50,6 +50,7 @@ Lists of supported AI models
 MODEL = [
 ["Anthropic",	"Claude",		"CHAT",		"claude-3-5-sonnet-latest"],
 ["Anthropic",	"Claude",		"CHAT",		"claude-3-5-haiku-latest"],
+["OpenAI",		"ChatGPT",	"CHAT",		"o3-mini"],	# 20250203
 ["OpenAI",		"ChatGPT",	"CHAT",		"gpt-4o"],
 ["OpenAI",		"ChatGPT",	"CHAT",		"gpt-4o-mini"],
 ["OpenAI",		"ChatGPT",	"CHAT",		"gpt-4"],
@@ -293,6 +294,17 @@ def sendMessageToIrcChannel(irc, channel, reply_to, message):
 					last_space_index = 392
 				irc.send(bytes("PRIVMSG " + channel + " :" + msg[:last_space_index] + "\n", "UTF-8"))
 				msg = msg[last_space_index:].lstrip()
+
+def getNickFromFull(full):	# 20241216
+	"""
+	PURPOSE:	Return nick form full name
+	VERIFIED:	YES
+	"""
+	try:
+		i = full.index("!")
+		return str(full.split("!")[0])
+	except:
+		return str("")
 
 def getChannelIndex(channel, channels):
 	"""
@@ -733,7 +745,8 @@ while True:
 			printDebug(DEBUG, "ircmsg = [" + ircmsg + "]")
 			command = chunk[1]
 			who_full = chunk[0][1:]
-			who_nick = who_full.split("!")[0]
+#			who_nick = who_full.split("!")[0]
+			who_nick = getNickFromFull(who_full)	# 20241216
 		else:
 			"""
 			Received special server message (FORMAT-1, e.g. PING)
@@ -813,7 +826,8 @@ while True:
 					ts = int(nowUTC().timestamp())	# 20241206
 					tsh = datetime.datetime.fromtimestamp(ts, pytz.timezone('UTC')).strftime('%Y-%m-%d %H:%M:%S')	# 20241206
 					print(str(tsh) + " : " + CHAN[0] + " : " + who_full + " : " + question)	# 20241206
-					writeToLog(str(tsh) + " : " + CHAN[0] + " : " + who_full + " : " + question)	# 20241206
+#					writeToLog(str(tsh) + " : " + CHAN[0] + " : " + who_full + " : " + question)	# 20241206
+					writeToLog(str(ts) + " : " + str(tsh) + " : " + CHAN[0] + " : " + who_full + " : " + question)	# 20241216
 					""" process the message in accordance with selected AI_MODEL """
 					match (CHAN[7].lower() + "/" + CHAN[8].lower()):
 						case "anthropic/chat":
