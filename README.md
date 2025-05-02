@@ -42,18 +42,19 @@ __AI IRC Bot__ is a simple IRC bot written in Python. It was initially forked fr
      ```
 
 ## Installation
-Clone the package using the below command. It will copy all files into the __AI-IRC-Bot__ directory, which you can later rename.
+Clone the package using the command below. It will copy all files into the __AI-IRC-Bot__ directory, which you can later rename.
 ```
 git clone https://github.com/oiramNet/AI-IRC-Bot
 ```
 
 ## Configuration
-__AI IRC Bot__ uses a plain-text file as its configuration file. The package includes an example configuration file (__AIbot.conf.sample__) which is set to connect to __IRCnet__. You can copy and modify it to suit your preferences.
+__AI IRC Bot__ uses a plain-text file for configuration. The package includes an example configuration file (__AIbot.conf.sample__), which is set to connect to __IRCnet__. You can copy and modify it to suit your preferences.
+
 ```
 cd AI-IRC-Bot
 cp AIbot.conf.sample SampleBot.conf
 ```
-> Some of the settings apply only to the specific __AI API__ or models. Make sure to check the sample configuration file for details.
+> Some of the settings apply only to the specific __AI API__ or models. Be sure to check the sample configuration file for more details.
 
 ### Supported models
 __AI IRC Bot__ can use any of the below models.
@@ -94,5 +95,5 @@ If you set the model to __dall-e-2__ or __dall-e-3__ (ChatGPT/Image creation), t
 13:14:35 < SampleBot> https://tinyurl.com/1a2b3c4d
 ```
 
-## Bugs, Enhancments, etc.
+## Bugs, Enhancements, etc.
 Feel free to contact us through the __GitHub__.
